@@ -100,3 +100,10 @@ def test_migration_events():
     assert stmt.delta.value == 10000
     assert stmt.delta.unit == "Monthly"
     assert stmt.delta.modifier == "Min"
+
+
+def test_compositional_grounding():
+    fname = os.path.join(path_this, 'hume.compositional.output.json-ld')
+    bp = process_jsonld_file(fname)
+    assert bp
+    assert bp.statements
