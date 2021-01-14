@@ -146,11 +146,13 @@ def shortest_simple_paths(G, source, target, weight=None, ignore_nodes=None,
 
             # Define length_func and shortest_path_func
             def length_func(path):
-                return sum(H.adj[u][v][weight]
-                           for (u, v) in zip(path, path[1:]))
-            def shortest_path_func(H, source, target, weight, ignore_nodes,
+                return sum(H.adj[x][y][weight]
+                           for (x, y) in zip(path, path[1:]))
+
+            def shortest_path_func(graph, source, target, weight, ignore_nodes,
                                    ignore_edges, force_edges):
-                return simple_paths._bidirectional_dijkstra(H, source, target,
+                return simple_paths._bidirectional_dijkstra(graph, source,
+                                                            target,
                                                             weight,
                                                             ignore_nodes,
                                                             ignore_edges)
