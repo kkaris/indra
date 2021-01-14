@@ -819,15 +819,22 @@ def open_dijkstra_search(g, start, reverse=False, path_limit=None,
                    for u, v in zip(path[:-1], path[1:]))
 
     if hashes:
-        for u, v, data in g.edges(data=True):
+        # Copy graph to avoid conflicting writes if running algorithm in a
+        # parallel/threading context. This adds a penalty of ~15-25s.
+        h = g.__class__()
+        h.add_nodes_from(g)
+        h.add_nodes_from(g.edges)
+
+        for u, v in g.edges:
             ref_counts, total = ref_counts_function(g, u, v)
             if not ref_counts:
                 ref_counts = 1e-15
-            data[weight] = \
-                -const_c * ln(ref_counts / (total + const_tk))
+            h[u][v][weight] = -const_c * ln(ref_counts / (total + const_tk))
+    else:
+        h = g
 
     if reverse:
-        g = g.reverse(copy=False)
+        h = h.reverse(copy=False)
 
     proper_nodes =\
         (lambda p: not set(p).intersection(set(ignore_nodes)))\
@@ -840,17 +847,17 @@ def open_dijkstra_search(g, start, reverse=False, path_limit=None,
     if terminal_ns:  # If not set, terminal_ns will be an empty list []
         def proper_path(path):
             if not proper_nodes(path) or not proper_edges(path)\
-                    or g.nodes[path[-1]]['ns'].lower() not in terminal_ns:
+                    or h.nodes[path[-1]]['ns'].lower() not in terminal_ns:
                 return False
             for u in path[:-1]:
-                if g.nodes[u]['ns'].lower() in terminal_ns:
+                if h.nodes[u]['ns'].lower() in terminal_ns:
                     return False
             return True
     else:
         def proper_path(path):
             return proper_nodes(path) and proper_edges(path) 
 
-    paths = list(nx.single_source_dijkstra_path(g, start,
+    paths = list(nx.single_source_dijkstra_path(h, start,
                                                 weight=weight).values())[1:]
     paths.sort(key=lambda x: weights_sum(x))
     if path_limit is not None:
