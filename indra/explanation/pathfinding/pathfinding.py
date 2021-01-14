@@ -24,7 +24,7 @@ def shortest_simple_paths(G, source, target, weight=None, ignore_nodes=None,
                           ignore_edges=None, hashes=None,
                           ref_counts_function=None,
                           strict_mesh_id_filtering=False,
-                          const_c=1, const_tk=10):
+                          const_c=1, const_tk=10, readonly=False):
     """Generate all simple paths in the graph G from source to target,
        starting from shortest ones.
 
@@ -58,6 +58,10 @@ def shortest_simple_paths(G, source, target, weight=None, ignore_nodes=None,
         Constant used in MeSH IDs-based weight calculation
     const_tk : int
         Constant used in MeSH IDs-based weight calculation
+    readonly : bool
+        If True, copy graph and the relevant edge attributes in order to
+        avoid conflicting write operations in a parallel/threading context.
+        Default: False.
 
     Returns
     -------
@@ -133,17 +137,26 @@ def shortest_simple_paths(G, source, target, weight=None, ignore_nodes=None,
             weight = 'context_weight'
             # Copy graph to avoid conflicting writes if running algorithm in a
             # parallel/threading context
-            H = G.__class__()
-            H.add_nodes_from(G)
-            H.add_nodes_from(G.edges)
-            for u, v in G.edges:
-                ref_counts, total = \
-                    ref_counts_function(G, u, v)
-                if not ref_counts:
-                    ref_counts = 1e-15
-                H[u][v]['context_weight'] = \
-                    -const_c * ln(ref_counts / (total + const_tk))
-
+            if readonly:
+                H = G.__class__()
+                H.add_nodes_from(G)
+                H.add_nodes_from(G.edges)
+                for u, v in G.edges:
+                    ref_counts, total = \
+                        ref_counts_function(G, u, v)
+                    if not ref_counts:
+                        ref_counts = 1e-15
+                    H[u][v]['context_weight'] = \
+                        -const_c * ln(ref_counts / (total + const_tk))
+            else:
+                for u, v, data in G.edges(data=True):
+                    ref_counts, total = \
+                        ref_counts_function(G, u, v)
+                    if not ref_counts:
+                        ref_counts = 1e-15
+                    data['context_weight'] = \
+                        -const_c * ln(ref_counts / (total + const_tk))
+                H = G
             # Define length_func and shortest_path_func
             def length_func(path):
                 return sum(H.adj[x][y][weight]
@@ -771,7 +784,7 @@ def open_dijkstra_search(g, start, reverse=False, path_limit=None,
                          ignore_nodes=None, ignore_edges=None, 
                          terminal_ns=None, weight=None,
                          ref_counts_function=None, const_c=1,
-                         const_tk=10):
+                         const_tk=10, readonly=False):
     """Do Dijkstra search from a given node and yield paths
 
     Parameters
@@ -807,6 +820,10 @@ def open_dijkstra_search(g, start, reverse=False, path_limit=None,
         Constant used in MeSH IDs-based weight calculation
     const_tk : int
         Constant used in MeSH IDs-based weight calculation
+    readonly : bool
+        If True, copy graph and the relevant edge attributes in order to
+        avoid conflicting write operations in a parallel/threading context.
+        Default: False.
 
 
     Yields
@@ -821,15 +838,23 @@ def open_dijkstra_search(g, start, reverse=False, path_limit=None,
     if hashes:
         # Copy graph to avoid conflicting writes if running algorithm in a
         # parallel/threading context. This adds a penalty of ~15-25s.
-        h = g.__class__()
-        h.add_nodes_from(g)
-        h.add_nodes_from(g.edges)
+        if readonly:
+            h = g.__class__()
+            h.add_nodes_from(g)
+            h.add_nodes_from(g.edges)
 
-        for u, v in g.edges:
-            ref_counts, total = ref_counts_function(g, u, v)
-            if not ref_counts:
-                ref_counts = 1e-15
-            h[u][v][weight] = -const_c * ln(ref_counts / (total + const_tk))
+            for u, v in g.edges:
+                ref_counts, total = ref_counts_function(g, u, v)
+                if not ref_counts:
+                    ref_counts = 1e-15
+                h[u][v][weight] = -const_c * ln(ref_counts / (total + const_tk))
+        else:
+            for u, v, data in g.edges(data=True):
+                ref_counts, total = ref_counts_function(g, u, v)
+                if not ref_counts:
+                    ref_counts = 1e-15
+                data[weight] = -const_c * ln(ref_counts / (total + const_tk))
+            h = g
     else:
         h = g
 
