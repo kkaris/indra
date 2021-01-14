@@ -128,25 +128,35 @@ def shortest_simple_paths(G, source, target, weight=None, ignore_nodes=None,
             for u, v in G.edges():
                 if ref_counts_function(G, u, v)[0]:
                     allowed_edges.append((u, v))
+            H = G
         else:
             weight = 'context_weight'
-            def length_func(path):
-                return sum(G.adj[u][v][weight]
-                           for (u, v) in zip(path, path[1:]))
-            def shortest_path_func(G, source, target, weight, ignore_nodes,
-                                   ignore_edges, force_edges):
-                return simple_paths._bidirectional_dijkstra(G, source, target,
-                                                            weight,
-                                                            ignore_nodes,
-                                                            ignore_edges)
-            for u, v, data, in G.edges(data=True):
+            # Copy graph to avoid conflicting writes if running algorithm in a
+            # parallel/threading context
+            H = G.__class__()
+            H.add_nodes_from(G)
+            H.add_nodes_from(G.edges)
+            for u, v in G.edges:
                 ref_counts, total = \
                     ref_counts_function(G, u, v)
                 if not ref_counts:
                     ref_counts = 1e-15
-                data['context_weight'] = \
+                H[u][v]['context_weight'] = \
                     -const_c * ln(ref_counts / (total + const_tk))
+
+            # Define length_func and shortest_path_func
+            def length_func(path):
+                return sum(H.adj[u][v][weight]
+                           for (u, v) in zip(path, path[1:]))
+            def shortest_path_func(H, source, target, weight, ignore_nodes,
+                                   ignore_edges, force_edges):
+                return simple_paths._bidirectional_dijkstra(H, source, target,
+                                                            weight,
+                                                            ignore_nodes,
+                                                            ignore_edges)
+
     else:
+        H = G
         if strict_mesh_id_filtering:
             return []
         if weight is None:
@@ -154,11 +164,13 @@ def shortest_simple_paths(G, source, target, weight=None, ignore_nodes=None,
             shortest_path_func = _bidirectional_shortest_path
         else:
             def length_func(path):
-                return sum(G.adj[u][v][weight]
-                           for (u, v) in zip(path, path[1:]))
-            def shortest_path_func(G, source, target, weight, ignore_nodes,
+                return sum(H.adj[x][y][weight]
+                           for (x, y) in zip(path, path[1:]))
+
+            def shortest_path_func(graph, source, target, weight, ignore_nodes,
                                    ignore_edges, force_edges):
-                return simple_paths._bidirectional_dijkstra(G, source, target,
+                return simple_paths._bidirectional_dijkstra(graph, source,
+                                                            target,
                                                             weight,
                                                             ignore_nodes,
                                                             ignore_edges)
@@ -174,7 +186,7 @@ def shortest_simple_paths(G, source, target, weight=None, ignore_nodes=None,
         cur_ignore_nodes = culled_ignored_nodes.copy()
         cur_ignore_edges = culled_ignored_edges.copy()
         if not prev_path:
-            length, path = shortest_path_func(G, source, target, weight=weight,
+            length, path = shortest_path_func(H, source, target, weight=weight,
                                               ignore_nodes=cur_ignore_nodes,
                                               ignore_edges=cur_ignore_edges,
                                               force_edges=allowed_edges)
@@ -188,7 +200,7 @@ def shortest_simple_paths(G, source, target, weight=None, ignore_nodes=None,
                         cur_ignore_edges.add((path[i - 1], path[i]))
                 try:
                     length, spur = shortest_path_func(
-                        G, root[-1], target, ignore_nodes=cur_ignore_nodes,
+                        H, root[-1], target, ignore_nodes=cur_ignore_nodes,
                         ignore_edges=cur_ignore_edges, weight=weight, 
                         force_edges=allowed_edges)
                     path = root[:-1] + spur
