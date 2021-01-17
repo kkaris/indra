@@ -784,7 +784,7 @@ def open_dijkstra_search(g, start, reverse=False, path_limit=None,
                          ignore_nodes=None, ignore_edges=None, 
                          terminal_ns=None, weight=None,
                          ref_counts_function=None, const_c=1,
-                         const_tk=10, readonly=False):
+                         const_tk=10, graph_copy=None):
     """Do Dijkstra search from a given node and yield paths
 
     Parameters
@@ -810,7 +810,7 @@ def open_dijkstra_search(g, start, reverse=False, path_limit=None,
     terminal_ns : list[str]
         Force a path to terminate when any of the namespaces in this list
         are encountered and only yield paths that terminate at these
-        namepsaces
+        namespaces
     weight : str
         Name of edge's attribute used as its weight
     ref_counts_function : function
@@ -820,10 +820,11 @@ def open_dijkstra_search(g, start, reverse=False, path_limit=None,
         Constant used in MeSH IDs-based weight calculation
     const_tk : int
         Constant used in MeSH IDs-based weight calculation
-    readonly : bool
-        If True, copy graph and the relevant edge attributes in order to
-        avoid conflicting write operations in a parallel/threading context.
-        Default: False.
+    graph_copy : nx.DiGraph
+        If provided, it is assumed to be a copy of `g` with the relevant
+        edge attributes for the algorithm to funciton in order to avoid
+        conflicting write operations in a parallel/threading context.
+        Default: None
 
 
     Yields
@@ -831,23 +832,15 @@ def open_dijkstra_search(g, start, reverse=False, path_limit=None,
     path : tuple(node)
         Paths in the bfs search starting from `source`.
     """
-    def weights_sum(path):
-        return sum(g[u][v][weight]
-                   for u, v in zip(path[:-1], path[1:]))
-
     if hashes:
-        # Copy graph to avoid conflicting writes if running algorithm in a
-        # parallel/threading context. This adds a penalty of ~15-25s.
-        if readonly:
-            h = g.__class__()
-            h.add_nodes_from(g)
-            h.add_nodes_from(g.edges)
-
+        if graph_copy:
             for u, v in g.edges:
                 ref_counts, total = ref_counts_function(g, u, v)
                 if not ref_counts:
                     ref_counts = 1e-15
-                h[u][v][weight] = -const_c * ln(ref_counts / (total + const_tk))
+                graph_copy[u][v][weight] = \
+                    -const_c * ln(ref_counts / (total + const_tk))
+            h = graph_copy
         else:
             for u, v, data in g.edges(data=True):
                 ref_counts, total = ref_counts_function(g, u, v)
@@ -858,24 +851,28 @@ def open_dijkstra_search(g, start, reverse=False, path_limit=None,
     else:
         h = g
 
+    def weights_sum(path):
+        return sum(h[x][y][weight]
+                   for x, y in zip(path[:-1], path[1:]))
+
     if reverse:
         h = h.reverse(copy=False)
 
     proper_nodes =\
-        (lambda p: not set(p).intersection(set(ignore_nodes)))\
-        if ignore_nodes else lambda p: True
+        (lambda pl: not set(pl).intersection(set(ignore_nodes)))\
+        if ignore_nodes else lambda pl: True
     proper_edges = \
-        (lambda p: not sum(1 for u, v in zip(p[:-1], p[1:])
-                           if (u, v) in ignore_edges))\
-        if ignore_edges else lambda p: True
+        (lambda pl: not sum(1 for x, y in zip(pl[:-1], pl[1:])
+                            if (x, y) in ignore_edges))\
+        if ignore_edges else lambda pl: True
 
     if terminal_ns:  # If not set, terminal_ns will be an empty list []
         def proper_path(path):
             if not proper_nodes(path) or not proper_edges(path)\
                     or h.nodes[path[-1]]['ns'].lower() not in terminal_ns:
                 return False
-            for u in path[:-1]:
-                if h.nodes[u]['ns'].lower() in terminal_ns:
+            for n in path[:-1]:
+                if h.nodes[n]['ns'].lower() in terminal_ns:
                     return False
             return True
     else:
