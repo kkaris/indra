@@ -24,7 +24,7 @@ def shortest_simple_paths(G, source, target, weight=None, ignore_nodes=None,
                           ignore_edges=None, hashes=None,
                           ref_counts_function=None,
                           strict_mesh_id_filtering=False,
-                          const_c=1, const_tk=10, readonly=False):
+                          const_c=1, const_tk=10, graph_copy=None):
     """Generate all simple paths in the graph G from source to target,
        starting from shortest ones.
 
@@ -58,10 +58,11 @@ def shortest_simple_paths(G, source, target, weight=None, ignore_nodes=None,
         Constant used in MeSH IDs-based weight calculation
     const_tk : int
         Constant used in MeSH IDs-based weight calculation
-    readonly : bool
-        If True, copy graph and the relevant edge attributes in order to
-        avoid conflicting write operations in a parallel/threading context.
-        Default: False.
+    graph_copy : nx.DiGraph
+        If provided, it is assumed to be a copy of `g` with the relevant
+        edge attributes for the algorithm to funciton in order to avoid
+        conflicting write operations in a parallel/threading context.
+        Default: None
 
     Returns
     -------
@@ -137,17 +138,15 @@ def shortest_simple_paths(G, source, target, weight=None, ignore_nodes=None,
             weight = 'context_weight'
             # Copy graph to avoid conflicting writes if running algorithm in a
             # parallel/threading context
-            if readonly:
-                H = G.__class__()
-                H.add_nodes_from(G)
-                H.add_nodes_from(G.edges)
+            if graph_copy:
                 for u, v in G.edges:
                     ref_counts, total = \
                         ref_counts_function(G, u, v)
                     if not ref_counts:
                         ref_counts = 1e-15
-                    H[u][v]['context_weight'] = \
+                    graph_copy[u][v]['context_weight'] = \
                         -const_c * ln(ref_counts / (total + const_tk))
+                H = graph_copy
             else:
                 for u, v, data in G.edges(data=True):
                     ref_counts, total = \
