@@ -252,37 +252,48 @@
   <h3 class="bg-white">Summary</h3>
   <p>On this page, you can search for statements from the INDRA Database by applying different filters such as agents, relation types, MeSH terms, or papers.</p>
   <h4>Examples</h4>
+    <!-- Examples -->
     <span style="color:#888;">•</span>
     <span style="cursor:pointer; color:#256DC5; text-decoration:underline;"
-        data-agent1="DUSP1" data-agent2="MAPK1"
-        onclick="window.dispatchEvent(new CustomEvent('indra:example', { detail: { agent1: this.dataset.agent1, agent2: this.dataset.agent2 } }))">
-            How does DUSP1 affect MAPK1?
-    </span>
-
-    <br/>
-
-    <span style="color:#888;">•</span>
-    <span style="cursor:pointer; color:#256DC5; text-decoration:underline;"
-          data-agent1="CDK12" data-role1="subject" data-stmt-type="Phosphorylation"
+          data-agent1="DUSP1"
+          data-agent2="MAPK1"
+          data-preset="s-o"
           onclick="window.dispatchEvent(new CustomEvent('indra:example', { detail: {
             agent1: this.dataset.agent1,
-            role1: this.dataset.role1,
-            stmtType: this.dataset.stmtType
+            agent2: this.dataset.agent2,
+            preset: this.dataset.preset
           }}))">
-            What does CDK12 phosphorylate?
+      How does DUSP1 affect MAPK1?
     </span>
 
     <br/>
 
     <span style="color:#888;">•</span>
     <span style="cursor:pointer; color:#256DC5; text-decoration:underline;"
-          data-agent2="MTOR" data-role2="object" data-stmt-type="Inhibition"
+          data-agent1="CDK12"
+          data-stmt-type="Phosphorylation"
+          data-preset="s-o"
           onclick="window.dispatchEvent(new CustomEvent('indra:example', { detail: {
-            agent2: this.dataset.agent2,
-            role2: this.dataset.role2,
-            stmtType: this.dataset.stmtType
+            agent1: this.dataset.agent1,
+            stmtType: this.dataset.stmtType,
+            preset: this.dataset.preset
           }}))">
-            What is known to inhibit mTOR?
+      What does CDK12 phosphorylate?
+    </span>
+
+    <br/>
+
+    <span style="color:#888;">•</span>
+    <span style="cursor:pointer; color:#256DC5; text-decoration:underline;"
+          data-agent1="MTOR"
+          data-stmt-type="Inhibition"
+          data-preset="o-s"
+          onclick="window.dispatchEvent(new CustomEvent('indra:example', { detail: {
+            agent1: this.dataset.agent1,
+            stmtType: this.dataset.stmtType,
+            preset: this.dataset.preset
+          }}))">
+      What is known to inhibit mTOR?
     </span>
 
     <br/>
@@ -290,23 +301,27 @@
     <span style="color:#888;">•</span>
     <span style="cursor:pointer; color:#256DC5; text-decoration:underline;"
           data-agent1="PIK3CA"
+          data-preset="any-any"
           onclick="window.dispatchEvent(new CustomEvent('indra:example', { detail: {
-            agent1: this.dataset.agent1
+            agent1: this.dataset.agent1,
+            preset: this.dataset.preset
           }}))">
-            Show all interactions involving PIK3CA.
+      Show all interactions involving PIK3CA.
     </span>
 
     <br/>
 
     <span style="color:#888;">•</span>
     <span style="cursor:pointer; color:#256DC5; text-decoration:underline;"
-          data-agent1="Seliciclib" data-role1="subject" data-stmt-type="Inhibition"
+          data-agent1="Seliciclib"
+          data-stmt-type="Inhibition"
+          data-preset="s-o"
           onclick="window.dispatchEvent(new CustomEvent('indra:example', { detail: {
             agent1: this.dataset.agent1,
-            role1: this.dataset.role1,
-            stmtType: this.dataset.stmtType
+            stmtType: this.dataset.stmtType,
+            preset: this.dataset.preset
           }}))">
-            What does Seliciclib inhibit?
+      What does Seliciclib inhibit?
     </span>
 </div>
 
