@@ -592,10 +592,10 @@ def statement_to_rows(stmt, exclude_stmts=None, complex_members=3,
             pos = None
         # Create a simple flat list of just the values instead
         # of a dict with keys
-        statemet_hash = stmt.get_hash(refresh=True)
+        statement_hash = stmt.get_hash(refresh=True)
         if source_counts:
-            evidence_count = sum(source_counts.get(statemet_hash, {}).values())
-            source_count = source_counts.get(statemet_hash, {})
+            evidence_count = sum(source_counts.get(statement_hash, {}).values())
+            source_count = source_counts.get(statement_hash, {})
         else:
             evidence_count = len(stmt.evidence)
             source_count = _get_source_counts(stmt)
@@ -610,7 +610,7 @@ def statement_to_rows(stmt, exclude_stmts=None, complex_members=3,
             pos,
             stmt_type,
             evidence_count,
-            statemet_hash,
+            statement_hash,
             stmt.belief,
             source_count,
             sign
