@@ -213,7 +213,7 @@ the `indra_world` package to be installed.
 
 ```python
 from indra.tools import assemble_corpus as ac
-from indra_world.belief.wm_scorer import get_eidos_scorer
+from indra_world.belief import get_eidos_scorer
 from indra_world.ontology.world import world_ontology
 stmts = <the collection of all raw statements to use>
 stmts = ac.filter_grounded_only(stmts)  # Filter out ungrounded agents
