@@ -176,7 +176,7 @@ def test_regulate_amount():
 
 @pytest.mark.nonpublic
 def test_get_statements_by_hash():
-    hash_list = [30674674032092136, -22289282229858243, -25056605420392180]
+    hash_list = [13505361422242217, -22289282229858243, -25056605420392180]
     p = dbr.get_statements_by_hash(hash_list)
     p.wait_until_done(timeout=45)
     stmts = p.statements
