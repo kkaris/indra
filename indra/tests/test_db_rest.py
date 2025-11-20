@@ -178,14 +178,12 @@ def test_regulate_amount():
 def test_get_statements_by_hash():
     hash_list = [13505361422242217, -22289282229858243, -25056605420392180]
     p = dbr.get_statements_by_hash(hash_list)
-    p.wait_until_done(timeout=45)
     stmts = p.statements
     print({s.get_hash(shallow=True): s for s in stmts})
     assert len(stmts) >= 2, \
         "Wrong number of statements: %s vs. %s" % (len(stmts), len(hash_list))
 
     p = dbr.get_statements_by_hash(hash_list)
-    p.wait_until_done(timeout=45)
     assert len(p.statements)
     assert len(p.get_source_counts())
     assert len(p.get_ev_counts())
