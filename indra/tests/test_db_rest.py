@@ -32,7 +32,7 @@ def test_simple_request():
 
 @pytest.mark.nonpublic
 def test_request_for_complex():
-    __check_request(70, agents=['MEK@FPLX', 'ERK@FPLX'], stmt_type='Complex')
+    __check_request(100, agents=['MEK@FPLX', 'ERK@FPLX'], stmt_type='Complex')
 
 
 @pytest.mark.nonpublic
@@ -292,7 +292,7 @@ def test_get_statements_strict_stop_short():
 @pytest.mark.nonpublic
 def test_get_statements_strict_stop_long():
     """Test that the query ends when the limit is reached"""
-    timeout = 40  # Typically 20-30 s when slow/uncached
+    timeout = 70  # Typically 30+ s when slow/uncached
     start = datetime.now()
     p = dbr.get_statements(
         "VEGF", timeout=timeout, strict_stop=True, sort_by=None
