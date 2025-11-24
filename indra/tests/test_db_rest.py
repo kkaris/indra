@@ -49,18 +49,18 @@ def test_null_request():
 @pytest.mark.nonpublic
 @pytest.mark.slow
 def test_large_request():
-    __check_request(100, agents=['AKT1'], sort_by=None)
+    __check_request(100, agents=['AKT1'])
 
 
 @pytest.mark.nonpublic
 @pytest.mark.slow
 def test_bigger_request():
-    __check_request(100, agents=['MAPK1'], sort_by=None)
+    __check_request(100, agents=['MAPK1'])
 
 
 @pytest.mark.nonpublic
 def test_timeout_no_persist_gcg():
-    resp = dbr.get_statements(agents=["GCG"], persist=False, timeout=0, sort_by=None)
+    resp = dbr.get_statements(agents=["GCG"], persist=False, timeout=0)
     assert resp.is_working(), "Lookup resolved too fast."
     resp.wait_until_done(40)  # typically 20-30 s when slow/uncached
     assert len(resp.statements) > 0.9*EXPECTED_BATCH_SIZE, len(resp.statements)
@@ -71,8 +71,7 @@ def test_timeout_no_persist_type_object():
     resp = dbr.get_statements(stmt_type='phosphorylation',
                               object="NFkappaB@FPLX",
                               persist=False,
-                              timeout=0,
-                              sort_by=None)
+                              timeout=0)
     assert resp.is_working(), "Lookup resolved too fast."
     resp.wait_until_done(70)
     assert len(resp.statements) > 0.9*EXPECTED_BATCH_SIZE, len(resp.statements)
@@ -81,7 +80,7 @@ def test_timeout_no_persist_type_object():
 @pytest.mark.nonpublic
 @pytest.mark.slow
 def test_too_big_request_no_persist():
-    resp_some = __check_request(60, agents=['TP53'], persist=False, sort_by=None)
+    resp_some = __check_request(60, agents=['TP53'], persist=False)
     assert sum(resp_some.get_ev_count(s) is not None
                for s in resp_some.statements) == len(resp_some.statements), \
         "Counts dict was improperly handled."
@@ -248,7 +247,7 @@ def test_get_statement_queries():
 @pytest.mark.nonpublic
 def test_get_statements_end_on_limit():
     """Test that the query ends when the limit is reached"""
-    p = dbr.get_statements(subject="TNF", limit=1400, timeout=1, sort_by=None)
+    p = dbr.get_statements(subject="TNF", limit=1400, timeout=1)
     try:
         t = 0
         violations = 0
@@ -295,7 +294,7 @@ def test_get_statements_strict_stop_long():
     timeout = 70  # Typically 30+ s when slow/uncached
     start = datetime.now()
     p = dbr.get_statements(
-        "VEGF", timeout=timeout, strict_stop=True, sort_by=None
+        "VEGF", timeout=timeout, strict_stop=True
     )
     end = datetime.now()
     sleep(5)
