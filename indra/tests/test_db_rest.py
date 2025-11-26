@@ -20,17 +20,19 @@ def __check_request(seconds, *args, **kwargs):
     time_taken = datetime.now() - now
     if check_stmts:
         assert resp.statements, "Got no statements."
+    assert time_taken.total_seconds() < seconds, \
+        "Request took too long: %s" % time_taken.total_seconds()
     return resp
 
 
 @pytest.mark.nonpublic
 def test_simple_request():
-    __check_request(6, 'MAP2K1', 'MAPK1', stmt_type='Phosphorylation')
+    __check_request(40, 'MAP2K1', 'MAPK1', stmt_type='Phosphorylation')
 
 
 @pytest.mark.nonpublic
 def test_request_for_complex():
-    __check_request(30, agents=['MEK@FPLX', 'ERK@FPLX'], stmt_type='Complex')
+    __check_request(100, agents=['MEK@FPLX', 'ERK@FPLX'], stmt_type='Complex')
 
 
 @pytest.mark.nonpublic
@@ -47,20 +49,20 @@ def test_null_request():
 @pytest.mark.nonpublic
 @pytest.mark.slow
 def test_large_request():
-    __check_request(40, agents=['AKT1'])
+    __check_request(100, agents=['AKT1'])
 
 
 @pytest.mark.nonpublic
 @pytest.mark.slow
 def test_bigger_request():
-    __check_request(60, agents=['MAPK1'])
+    __check_request(100, agents=['MAPK1'])
 
 
 @pytest.mark.nonpublic
-def test_timeout_no_persist_nfkb():
-    resp = dbr.get_statements(agents=["NFkappaB@FPLX"], persist=False, timeout=0)
+def test_timeout_no_persist_gcg():
+    resp = dbr.get_statements(agents=["GCG"], persist=False, timeout=0)
     assert resp.is_working(), "Lookup resolved too fast."
-    resp.wait_until_done(70)
+    resp.wait_until_done(40)  # typically 20-30 s when slow/uncached
     assert len(resp.statements) > 0.9*EXPECTED_BATCH_SIZE, len(resp.statements)
 
 
@@ -173,7 +175,7 @@ def test_regulate_amount():
 
 @pytest.mark.nonpublic
 def test_get_statements_by_hash():
-    hash_list = [30674674032092136, -22289282229858243, -25056605420392180]
+    hash_list = [11163570810003104, -22289282229858243, -25056605420392180]
     p = dbr.get_statements_by_hash(hash_list)
     stmts = p.statements
     print({s.get_hash(shallow=True): s for s in stmts})
@@ -244,14 +246,16 @@ def test_get_statement_queries():
 
 @pytest.mark.nonpublic
 def test_get_statements_end_on_limit():
+    """Test that the query ends when the limit is reached"""
     p = dbr.get_statements(subject="TNF", limit=1400, timeout=1)
     try:
         t = 0
         violations = 0
         violations_allowed = 3
         while p.is_working():
-            assert t < 100, t
             limit = p._get_next_limit()
+            assert t < 100, f"Test timed out with limit {limit} and" \
+                            f"{violations} violations"
             if limit == 0 and p.is_working():
                 violations += 1
                 assert violations <= violations_allowed
@@ -286,9 +290,12 @@ def test_get_statements_strict_stop_short():
 
 @pytest.mark.nonpublic
 def test_get_statements_strict_stop_long():
-    timeout = 31
+    """Test that the query ends when the limit is reached"""
+    timeout = 70  # Typically 30+ s when slow/uncached
     start = datetime.now()
-    p = dbr.get_statements("TNF", timeout=timeout, strict_stop=True)
+    p = dbr.get_statements(
+        "VEGF", timeout=timeout, strict_stop=True
+    )
     end = datetime.now()
     sleep(5)
     assert not p.is_working()
