@@ -218,7 +218,7 @@
 {% endif %}
 
 <!-- THE MAIN BODY -->
-<main role="main" class="container-fluid">
+<main role="main" class="{{ main_tag_class|default('container') }}">
 
   {% if simple %}
     <!-- THE SIMPLE HEADING -->
