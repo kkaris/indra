@@ -34,7 +34,8 @@
     "creeds": 0.01,
     "ubibrowser": 0.01,
     "acsn": 0.01,
-    "semrep": 0.05
+    "semrep": 0.05,
+    "llm_bel": 0.05
   },
   "rand": {
     "eidos": 0.3,
@@ -72,6 +73,7 @@
     "ubibrowser": 0.1,
     "acsn": 0.1,
     "semrep": 0.3,
-    "wormbase": 0.1
+    "wormbase": 0.1,
+    "llm_bel": 0.3
   }
 }
