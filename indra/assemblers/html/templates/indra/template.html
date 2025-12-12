@@ -103,6 +103,9 @@
             margin-bottom: 0;
         }
 
+        {% block mid_right_styles %}
+        {% endblock %}
+
         .right {
             width: 20em;                /* Sidebar width */
             right: 0;
@@ -160,6 +163,7 @@
           padding-bottom: 65px
         }
 
+        {% block layout_media_queries %}
         @media (max-width: 1800px) {
           .right {
             width: 15%;
@@ -191,6 +195,8 @@
           .footer {
               right: 0em;
           }
+        }
+        {% endblock %}
         {% endif %}
     </style>
 
@@ -230,7 +236,7 @@
 {% endif %}
 
 <!-- THE MAIN BODY -->
-<main role="main" class="container">
+<main role="main" class="{{ main_tag_class|default('container') }}">
 
   {% if simple %}
     <!-- THE SIMPLE HEADING -->
@@ -259,6 +265,8 @@
   </div>
 </footer>
 
+{% block mid_right_panel %}
+{% endblock %}
 
 <!-- THE RIGHT SIDEBAR -->
 <div class="side-info right bg-white" id="right-side-panel">
@@ -301,6 +309,8 @@
       {% endfor %}
     </div>
   {% endfor %}
+  {% block right_sidebar_extra %}
+  {% endblock %}
 </div>
 {% endif %}
 </body>
