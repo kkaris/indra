@@ -338,5 +338,15 @@
             "color": "white",
             "background-color": "#a8d7ff"
         }
+    },
+    "llm_bel": {
+        "name": "LLM-BEL Extractor",
+        "link": "https://github.com/ndexbio/llm-text-to-knowledge-graph",
+        "type": "reader",
+        "domain": "biology",
+        "default_style": {
+            "color": "white",
+            "background-color": "#ffb3ba"
+        }
     }
 }
