@@ -29,40 +29,8 @@ class LlmBelProcessor:
         self.results = results
         self.statements = []
 
-        self._n_ok = 0
         self._n_skipped = 0
         self._n_error = 0
-
-    # Main API used by process_llm_results_json()
-    def add_from_pybel_processor(self, pp, extra_metadata: Dict[str, Any]):
-        """Attach PyBEL to INDRA statements with LLM metadata."""
-        cleaned_bel = extra_metadata.get("bel")
-        raw_bel = extra_metadata.get("raw_bel") or extra_metadata.get("bel")
-
-        text = (
-            extra_metadata.get("text")
-            or extra_metadata.get("sentence")
-            or extra_metadata.get("summary")
-            or ""
-        )
-
-        for st in pp.statements or []:
-            ev = Evidence(
-                source_api="llm_bel",
-                text=text,
-                pmid=extra_metadata.get("pmid"),
-                annotations={
-                    "bel": cleaned_bel,
-                    "raw_bel": raw_bel,  # preserve original LLM BEL
-                    "confidence": extra_metadata.get("confidence"),
-                    "pmcid": extra_metadata.get("pmcid"),
-                    "section": extra_metadata.get("section"),
-                    "llm_model": extra_metadata.get("model"),
-                },
-            )
-            st.evidence.append(ev)
-            self.statements.append(st)
-            self._n_ok += 1
 
     # Alternative processing mode (not used by V1 tests but available)
     def extract_statements(self):
@@ -71,11 +39,18 @@ class LlmBelProcessor:
         for extraction in extractions:
             results = extraction.get('Results', [])
             for entry in results:
-                stmt = process_bel_stmt(entry['bel_statement'])
-                if stmt:
-                    self.statements.append(stmt)
+                try:
+                    pp = process_bel_stmt(entry['bel_statement'])
+                except Exception as e:
+                    self._n_error += 1
+                    continue
+                if pp and pp.statements:
+                    self.statements += pp.statements
+                else:
+                    self._n_skipped += 1
 
         logger.debug(
-            "LlmBelProcessor finished: OK=%d skipped=%d error=%d total=%d",
-            self._n_ok, self._n_skipped, self._n_error, len(self.results)
+            "LlmBelProcessor finished: extracted=%d skipped=%d error=%d "
+            "total=%d", len(self.statements), self._n_skipped, self._n_error,
+            len(self.results)
         )

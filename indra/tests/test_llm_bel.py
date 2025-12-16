@@ -1,46 +1,12 @@
-"""
-Tests for llm_bel V1 (offline JSON ingestion) and V2 (live wrapper)
-pipelines. Both test sets are independent and validate different parts
-of the LLM-BEL reader.
-
-V1 — Offline JSON Processing
-----------------------------
-Ensures that static BEL relations are correctly parsed into INDRA
-Statements, malformed BEL is safely skipped, grounding is valid, and
-evidence metadata (confidence, text) is propagated.
-
-V2 — Python Wrapper Integration
--------------------------------
-Uses import-level mocking to simulate textToKnowledgeGraph.main() and
-checks that the wrapper produces valid INDRA Statements and preserves
-metadata (confidence, pmcid). No network or API key is required.
-
-An optional live test exercises the real external extractor and is
-skipped unless all dependencies and environment variables are available.
-"""
-
 import json
-from pathlib import Path
 import builtins
 import pytest
 
 import indra.statements as ist
 from indra.util import unicode_strs
 from indra.sources import llm_bel
-from indra.sources.llm_bel.api import process_pmc_live
+from indra.sources.llm_bel.api import process_pmc
 from indra.sources.llm_bel.processor import LlmBelProcessor
-
-
-# Helper Assertions (shared by V1 tests)
-def assert_if_hgnc_then_up(st):
-    """If an agent has an HGNC grounding, ensure UP grounding exists."""
-    for a in st.agent_list():
-        if a is None:
-            continue
-        up = a.db_refs.get("UP")
-        hgnc = a.db_refs.get("HGNC")
-        if hgnc and not up:
-            assert False, f"Agent {a.name} has HGNC={hgnc} but no UP grounding"
 
 
 def assert_grounding_value_or_none(st):
@@ -52,8 +18,6 @@ def assert_grounding_value_or_none(st):
             if not v:
                 assert v is None, f"Invalid grounding value {k}={v}"
 
-
-# V1 TESTS
 
 TEST_JSON = {
     "relations": [
@@ -150,7 +114,7 @@ def test_v2_mock(monkeypatch):
     monkeypatch.setattr(builtins, "__import__", fake_import)
 
     # Run V2 live wrapper
-    proc = process_pmc_live("PMC123456", api_key="FAKE_KEY")
+    proc = process_pmc("PMC123456", api_key="FAKE_KEY")
 
     assert isinstance(proc, LlmBelProcessor)
     assert len(proc.statements) == 1
@@ -176,7 +140,7 @@ def test_v2_live_textkg():
     import os
 
     api_key = os.environ["OPENAI_API_KEY"]
-    proc = process_pmc_live("PMC3898398", api_key=api_key)
+    proc = process_pmc("PMC3898398", api_key=api_key)
 
     assert isinstance(proc, LlmBelProcessor)
     assert len(proc.statements) > 0

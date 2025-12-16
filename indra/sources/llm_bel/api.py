@@ -24,7 +24,6 @@ import logging
 from pathlib import Path
 from typing import Dict, Union
 
-from indra.sources.bel import process_bel_stmt
 from .processor import LlmBelProcessor
 from .normalizer import prepare_bel_for_parsing
 
