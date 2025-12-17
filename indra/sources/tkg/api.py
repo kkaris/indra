@@ -19,6 +19,7 @@ Both modes produce an TkgProcessor instance containing INDRA
 Statements derived from BEL expressions.
 """
 
+import os
 import json
 import logging
 from pathlib import Path
@@ -98,7 +99,7 @@ def process_json(data: Dict):
     return processor
 
 
-def process_pmc(pmc_id: str, **kwargs):
+def process_pmc(pmc_id: str, output_base_path, **kwargs):
     """Run live BEL extraction using textToKnowledgeGraph, if installed.
 
     Parameters
@@ -125,7 +126,7 @@ def process_pmc(pmc_id: str, **kwargs):
     except ImportError:
         raise ImportError(
             "The 'textToKnowledgeGraph' package is not installed. "
-            "Install it or run textToKnowledge graph separately to "
+            "Install it or run textToKnowledgeGraph separately to "
             "produce output files and then use one of the functions like "
             "process_json_file to process the outputs."
         )
@@ -134,16 +135,21 @@ def process_pmc(pmc_id: str, **kwargs):
 
     logger.debug("Running live textToKnowledgeGraph extraction for %s", pmc_id)
 
-    results = tkg_main(
+    success = tkg_main(
         api_key=api_key,
         pmc_ids=[pmc_id],
         upload_to_ndex=False,
+        # Note: this assumes https://github.com/ndexbio/llm-text-to-knowledge-graph/pull/27
+        # will be merged
+        output_base_path=output_base_path,
         **kwargs,
     )
 
-    if not isinstance(results, dict) or "relations" not in results:
-        logger.error(f"textToKnowledgeGraph returned unexpected "
-                     f"structure: {type(results)}")
-        return None
+    if success:
+        # TKG doesn't explicitly say where the results will be put so we need to
+        # construct this path ourselves
+        output_path = os.path.join(output_base_path, 'results', pmc_id,
+                                   'llm_results.json')
 
-    return process_json(results)
+        return process_json_file(output_path)
+    return None
