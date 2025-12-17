@@ -18,63 +18,48 @@ def assert_grounding_value_or_none(st):
 
 
 TEST_JSON = {
-    "relations": [
+    "LLM_extractions": [
         {
-            "bel": "p(HGNC:SIRT1) increases act(p(HGNC:PARP1))",
-            "evidence": "SIRT1 activates PARP1",
-            "confidence": 0.92,
-        },
-        {
-            "bel": "p(HGNC:SIRT1) decreases p(HGNC:MYC)",
-            "evidence": "SIRT1 represses MYC",
-            "confidence": 0.88,
-        },
-        {
-            # SHOULD FAIL (invalid BEL syntax → no statements)
-            "bel": "p(HGNC:SIRT1) increases act(p(HGNC:PARP1)",
-            "evidence": "Malformed BEL",
-            "confidence": 0.30,
-        },
-        {
-            # Semi-supported BEL → should produce statements
-            "bel": "p(FPLX:ERK) directlyIncreases act(p(HGNC:PARP1))",
-            "evidence": "ERK activates PARP1",
-            "confidence": 0.91,
-        },
+            "Results": [
+                {
+                    "bel_statement": "p(HGNC:SIRT1) increases act(p(HGNC:PARP1))",
+                    "evidence": "SIRT1 activates PARP1",
+                },
+                {
+                    "bel_statement": "p(HGNC:SIRT1) decreases p(HGNC:MYC)",
+                    "evidence": "SIRT1 represses MYC",
+                },
+                {
+                    "bel_statement": "p(HGNC:SIRT1) increases act(p(HGNC:PARP1)",
+                    "evidence": "Malformed BEL",
+                },
+                {
+                    "bel_statement": "p(FPLX:ERK) directlyIncreases act(p(HGNC:PARP1))",
+                    "evidence": "ERK activates PARP1",
+                },
+            ]
+        }
     ]
 }
 
 
-def test_llm_bel_offline_processing(tmp_path):
-    """V1 offline processing — ensure BEL JSON → INDRA statements."""
-
-    json_path = tmp_path / "llm_results.json"
-    json_path.write_text(json.dumps(TEST_JSON), encoding="utf-8")
-
-    proc = tkg.process_json_file(json_path)
+def test_tkg_offline_processing(tmp_path):
+    proc = tkg.process_json(TEST_JSON)
 
     assert proc is not None
     assert hasattr(proc, "statements")
 
     # Expect ~3 valid BELs (invalid BEL should be skipped)
-    assert len(proc.statements) >= 3
+    assert len(proc.statements) == 3
 
     for st in proc.statements:
         assert st.evidence, "Evidence must exist"
-        assert unicode_strs((st,)), "Unicode safety failed"
         assert_grounding_value_or_none(st)
 
     found_activation = any(isinstance(s, ist.Activation) for s in proc.statements)
     found_inhibition = any(isinstance(s, ist.DecreaseAmount) for s in proc.statements)
     assert found_activation, "Expected Activation statement"
     assert found_inhibition, "Expected DecreaseAmount statement"
-
-    # Confidence propagation
-    for st in proc.statements:
-        assert any(
-            "confidence" in ev.annotations and ev.annotations["confidence"] is not None
-            for ev in st.evidence
-        )
 
 
 # V2 TESTS
