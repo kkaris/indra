@@ -15,7 +15,7 @@ Live processing
     the LLM extraction pipeline, processes the returned BEL relations
     and produces INDRA Statements.
 
-Both modes produce an LlmBelProcessor instance containing INDRA
+Both modes produce an TkgProcessor instance containing INDRA
 Statements derived from BEL expressions.
 """
 
@@ -24,13 +24,13 @@ import logging
 from pathlib import Path
 from typing import Dict, Union
 
-from .processor import LlmBelProcessor
+from .processor import TkgProcessor
 
 logger = logging.getLogger(__name__)
 
 
 
-def process_json_file(path: Union[str, Path]) -> LlmBelProcessor:
+def process_json_file(path: Union[str, Path]):
     """Process a single textToKnowledgeGraph JSON results file.
 
     Parameters
@@ -40,7 +40,7 @@ def process_json_file(path: Union[str, Path]) -> LlmBelProcessor:
 
     Returns
     -------
-    LlmBelProcessor
+    TkgProcessor
         Processor containing the converted INDRA Statements.
     """
     path = Path(path)
@@ -52,7 +52,7 @@ def process_json_file(path: Union[str, Path]) -> LlmBelProcessor:
     return process_json(data)
 
 
-def process_json_folder(path: Union[str, Path]) -> LlmBelProcessor:
+def process_json_folder(path: Union[str, Path]):
     """Process all JSON files in a directory of textToKnowledgeGraph outputs.
 
     Parameters
@@ -62,10 +62,10 @@ def process_json_folder(path: Union[str, Path]) -> LlmBelProcessor:
 
     Returns
     -------
-    LlmBelProcessor
+    TkgProcessor
         Processor containing the union of all INDRA Statements.
     """
-    processor = LlmBelProcessor()
+    processor = TkgProcessor()
     path = Path(path)
 
     for f in sorted(path.glob("*.json")):
@@ -78,7 +78,7 @@ def process_json_folder(path: Union[str, Path]) -> LlmBelProcessor:
     return processor
 
 
-def process_json(data: Dict) -> LlmBelProcessor:
+def process_json(data: Dict):
     """Process BEL relations returned directly from the LLM engine.
 
     Parameters
@@ -88,16 +88,15 @@ def process_json(data: Dict) -> LlmBelProcessor:
 
     Returns
     -------
-    LlmBelProcessor
+    TkgProcessor
         Processor with INDRA Statements derived from BEL.
     """
-    processor = LlmBelProcessor(data)
+    processor = TkgProcessor(data)
     processor.extract_statements()
     return processor
 
 
-def process_pmc(pmc_id: str, api_key: str, **kwargs) -> \
-        Union[LlmBelProcessor, None]:
+def process_pmc(pmc_id: str, api_key: str, **kwargs):
     """Run live BEL extraction using textToKnowledgeGraph, if installed.
 
     Parameters
@@ -111,7 +110,7 @@ def process_pmc(pmc_id: str, api_key: str, **kwargs) -> \
 
     Returns
     -------
-    LlmBelProcessor
+    TkgProcessor
         Processor containing INDRA Statements derived from live BEL output.
 
     Raises

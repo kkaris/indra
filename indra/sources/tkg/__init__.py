@@ -10,7 +10,7 @@ bioRxiv https://doi.org/10.1101/2025.07.17.664328
 """
 
 from .api import *
-from .processor import LlmBelProcessor
+from .processor import TkgProcessor
 from .normalizer import prepare_bel_for_parsing
 
 __all__ = [
@@ -18,6 +18,6 @@ __all__ = [
     "process_json_folder",
     "process_json",
     "process_pmc",
-    "LlmBelProcessor",
+    "TkgProcessor",
     "prepare_bel_for_parsing",
 ]

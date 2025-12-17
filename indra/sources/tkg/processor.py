@@ -1,3 +1,5 @@
+__all__ = ["TkgProcessor"]
+
 import logging
 from typing import Dict, List
 
@@ -6,7 +8,7 @@ from indra.sources.bel import process_bel_stmt
 logger = logging.getLogger(__name__)
 
 
-class LlmBelProcessor:
+class TkgProcessor:
     """Processor extracting INDRA Statments from textToKnowledgeGraph output.
 
     After parsing BEL to INDRA Statements via PyBEL, this processor attaches
@@ -48,7 +50,7 @@ class LlmBelProcessor:
                     self._n_skipped += 1
 
         logger.debug(
-            "LlmBelProcessor finished: extracted=%d skipped=%d error=%d "
-            "total=%d", len(self.statements), self._n_skipped, self._n_error,
-            len(self.results)
+            "textToKnowledgeGraph processor finished: extracted=%d "
+            "skipped=%d error=%d total=%d", len(self.statements),
+            self._n_skipped, self._n_error, len(self.results)
         )

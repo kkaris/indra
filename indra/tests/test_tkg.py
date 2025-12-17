@@ -113,7 +113,7 @@ def test_v2_mock(monkeypatch):
     # Run V2 live wrapper
     proc = tkg.process_pmc("PMC123456", api_key="FAKE_KEY")
 
-    assert isinstance(proc, tkg.LlmBelProcessor)
+    assert isinstance(proc, tkg.TkgProcessor)
     assert len(proc.statements) == 1
 
     st = proc.statements[0]
@@ -139,7 +139,7 @@ def test_v2_live_textkg():
     api_key = os.environ["OPENAI_API_KEY"]
     proc = tkg.process_pmc("PMC3898398", api_key=api_key)
 
-    assert isinstance(proc, tkg.LlmBelProcessor)
+    assert isinstance(proc, tkg.TkgProcessor)
     assert len(proc.statements) > 0
     assert any(
         "confidence" in ev.annotations
