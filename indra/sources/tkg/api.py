@@ -24,6 +24,8 @@ import logging
 from pathlib import Path
 from typing import Dict, Union
 
+from indra import get_config
+
 from .processor import TkgProcessor
 
 logger = logging.getLogger(__name__)
@@ -96,15 +98,13 @@ def process_json(data: Dict):
     return processor
 
 
-def process_pmc(pmc_id: str, api_key: str, **kwargs):
+def process_pmc(pmc_id: str, **kwargs):
     """Run live BEL extraction using textToKnowledgeGraph, if installed.
 
     Parameters
     ----------
     pmc_id : str
         PMCID such as 'PMC3898398'.
-    api_key : str
-        OpenAI API key required by the external textToKnowledgeGraph package.
     kwargs :
         Additional keyword arguments passed to textToKnowledgeGraph.main().
 
@@ -121,7 +121,7 @@ def process_pmc(pmc_id: str, api_key: str, **kwargs):
         If the returned data structure is unexpected.
     """
     try:
-        from texttoknowledgegraph import main as tkg_main
+        from textToKnowledgeGraph import main as tkg_main
     except ImportError:
         raise ImportError(
             "The 'textToKnowledgeGraph' package is not installed. "
@@ -129,6 +129,8 @@ def process_pmc(pmc_id: str, api_key: str, **kwargs):
             "produce output files and then use one of the functions like "
             "process_json_file to process the outputs."
         )
+
+    api_key = get_config('OPENAI_API_KEY', failure_ok=False)
 
     logger.debug("Running live textToKnowledgeGraph extraction for %s", pmc_id)
 
