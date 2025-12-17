@@ -339,8 +339,8 @@
             "background-color": "#a8d7ff"
         }
     },
-    "llm_bel": {
-        "name": "LLM-BEL Extractor",
+    "tkg": {
+        "name": "textToKnowledgeGraph",
         "link": "https://github.com/ndexbio/llm-text-to-knowledge-graph",
         "type": "reader",
         "domain": "biology",

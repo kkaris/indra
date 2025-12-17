@@ -1,9 +1,7 @@
 import logging
-from typing import Any, Dict, List, Optional, Sequence
+from typing import Dict, List
 
-from indra.statements import Evidence
 from indra.sources.bel import process_bel_stmt
-from .normalizer import prepare_bel_for_parsing
 
 logger = logging.getLogger(__name__)
 

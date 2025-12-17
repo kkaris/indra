@@ -25,7 +25,6 @@ from pathlib import Path
 from typing import Dict, Union
 
 from .processor import LlmBelProcessor
-from .normalizer import prepare_bel_for_parsing
 
 logger = logging.getLogger(__name__)
 

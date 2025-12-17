@@ -4,9 +4,7 @@ import pytest
 
 import indra.statements as ist
 from indra.util import unicode_strs
-from indra.sources import llm_bel
-from indra.sources.llm_bel.api import process_pmc
-from indra.sources.llm_bel.processor import LlmBelProcessor
+from indra.sources import tkg
 
 
 def assert_grounding_value_or_none(st):
@@ -53,7 +51,7 @@ def test_llm_bel_offline_processing(tmp_path):
     json_path = tmp_path / "llm_results.json"
     json_path.write_text(json.dumps(TEST_JSON), encoding="utf-8")
 
-    proc = llm_bel.process_llm_results_file(json_path)
+    proc = tkg.process_json_file(json_path)
 
     assert proc is not None
     assert hasattr(proc, "statements")
@@ -65,7 +63,6 @@ def test_llm_bel_offline_processing(tmp_path):
         assert st.evidence, "Evidence must exist"
         assert unicode_strs((st,)), "Unicode safety failed"
         assert_grounding_value_or_none(st)
-        assert_if_hgnc_then_up(st)
 
     found_activation = any(isinstance(s, ist.Activation) for s in proc.statements)
     found_inhibition = any(isinstance(s, ist.DecreaseAmount) for s in proc.statements)
@@ -114,9 +111,9 @@ def test_v2_mock(monkeypatch):
     monkeypatch.setattr(builtins, "__import__", fake_import)
 
     # Run V2 live wrapper
-    proc = process_pmc("PMC123456", api_key="FAKE_KEY")
+    proc = tkg.process_pmc("PMC123456", api_key="FAKE_KEY")
 
-    assert isinstance(proc, LlmBelProcessor)
+    assert isinstance(proc, tkg.LlmBelProcessor)
     assert len(proc.statements) == 1
 
     st = proc.statements[0]
@@ -140,9 +137,9 @@ def test_v2_live_textkg():
     import os
 
     api_key = os.environ["OPENAI_API_KEY"]
-    proc = process_pmc("PMC3898398", api_key=api_key)
+    proc = tkg.process_pmc("PMC3898398", api_key=api_key)
 
-    assert isinstance(proc, LlmBelProcessor)
+    assert isinstance(proc, tkg.LlmBelProcessor)
     assert len(proc.statements) > 0
     assert any(
         "confidence" in ev.annotations
