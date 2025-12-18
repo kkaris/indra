@@ -23,6 +23,7 @@ def main():
                       'hypothesis': ['gilda>1.0.0'],
                       'geneways': ['stemming', 'nltk<3.6'],
                       'bel': ['pybel>=0.15.0,<0.16.0'],
+                      'tkg': ['pybel>=0.15.0,<0.16.0', 'texttoknowledgegraph'],
                       'sbml': ['python-libsbml'],
                       # Tools and analysis
                       'machine': ['pytz', 'tzlocal', 'tweepy', 'pyyaml>=5.1.0',

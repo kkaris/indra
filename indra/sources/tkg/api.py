@@ -25,7 +25,6 @@ from pathlib import Path
 from typing import Dict, Union
 
 from indra import get_config
-
 from .processor import TkgProcessor
 
 logger = logging.getLogger(__name__)
