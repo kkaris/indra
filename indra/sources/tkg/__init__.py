@@ -11,13 +11,10 @@ bioRxiv https://doi.org/10.1101/2025.07.17.664328
 
 from .api import *
 from .processor import TkgProcessor
-from .normalizer import prepare_bel_for_parsing
 
 __all__ = [
     "process_json_file",
-    "process_json_folder",
     "process_json",
     "process_pmc",
     "TkgProcessor",
-    "prepare_bel_for_parsing",
 ]

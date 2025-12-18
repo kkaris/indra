@@ -1,5 +1,4 @@
-__all__ = ["process_json_file", "process_json_folder", "process_json",
-           "process_pmc"]
+__all__ = ["process_json_file", "process_json", "process_pmc"]
 """
 This module implements an API for the textToKnowledgeGraph
 method which extracts BEL statements from publications via an LLM.
@@ -53,32 +52,6 @@ def process_json_file(path: Union[str, Path]):
         data = json.load(fh)
 
     return process_json(data)
-
-
-def process_json_folder(path: Union[str, Path]):
-    """Process all JSON files in a directory of textToKnowledgeGraph outputs.
-
-    Parameters
-    ----------
-    path : str or Path
-        Directory containing multiple JSON output files.
-
-    Returns
-    -------
-    TkgProcessor
-        Processor containing the union of all INDRA Statements.
-    """
-    processor = TkgProcessor()
-    path = Path(path)
-
-    for f in sorted(path.glob("*.json")):
-        logger.info("Processing file: %s", f)
-        with open(f, "r") as fh:
-            data = json.load(f)
-        sub = process_json(data)
-        processor.statements.extend(sub.statements)
-
-    return processor
 
 
 def process_json(data: Dict):

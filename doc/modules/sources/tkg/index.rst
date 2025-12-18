@@ -17,10 +17,3 @@ textToKnowledgeGraph Processor (:py:mod:`indra.sources.tkg.processor`)
 
 .. automodule:: indra.sources.tkg.processor
     :members:
-
-
-textToKnowledgeGraph Normalizer (:py:mod:`indra.sources.tkg.normalizer`)
-------------------------------------------------------------------------
-
-.. automodule:: indra.sources.tkg.normalizer
-    :members:

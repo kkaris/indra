@@ -1,10 +1,10 @@
 __all__ = ["TkgProcessor"]
 
+import re
 import logging
 from typing import Dict, List
 
 from indra.sources.bel import process_bel_stmt
-from .normalizer import normalize_bel
 
 logger = logging.getLogger(__name__)
 
@@ -40,8 +40,6 @@ class TkgProcessor:
             for entry in results:
                 raw_bel_stmt = entry['bel_statement']
                 bel_stmt = normalize_bel(raw_bel_stmt)
-                if raw_bel_stmt != bel_stmt:
-                    logger.info('%s / %s' % (raw_bel_stmt, bel_stmt))
                 try:
                     pp = process_bel_stmt(bel_stmt)
                 except Exception as e:
@@ -57,3 +55,32 @@ class TkgProcessor:
             "skipped=%d total=%d", len(self.statements), len(self.skipped),
             len(self.results)
         )
+
+
+# Fix GO Biological Process names that contain spaces
+GO_BP_PATTERN = re.compile(r'GO:([A-Za-z0-9\-\s]+)')
+
+
+def normalize_go_terms(bel: str) -> str:
+    """Normalize GO terms like:
+        GO:DNA-templated transcription
+    into:
+        GO:"DNA-templated transcription"
+    so PyBEL can parse them.
+    """
+    def replacer(match):
+        content = match.group(1)
+        # If already quoted or no spaces in string, we can return as is
+        if '"' in content or "'" in content or ' ' not in content:
+            return f'GO:{content}'
+        return f'GO:"{content}"'
+
+    return GO_BP_PATTERN.sub(replacer, bel)
+
+
+def normalize_bel(bel: str) -> str:
+    """Apply all normalization steps."""
+    # For now just normalizing GO terms which appears to be an existing issue.
+    # Can be extended with other processing steps later.
+    bel = normalize_go_terms(bel)
+    return bel
