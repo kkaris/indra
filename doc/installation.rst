@@ -208,6 +208,8 @@ of dependencies.
 +-----------------+------------------------------------------------------+
 |eidos_offline    |Offline reading with local instance of Eidos system   |
 +-----------------+------------------------------------------------------+
+|tkg              |Reading with textToKnowledgeGraph                     |
++-----------------+------------------------------------------------------+
 |geneways         |Genewayas reader input processing                     |
 +-----------------+------------------------------------------------------+
 |sofia            |SOFIA reader input processing                         |

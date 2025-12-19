@@ -11,7 +11,7 @@ with open(readme_path, 'r', encoding='utf-8') as fh:
 def main():
     install_list = ['pysb>=1.3.0', 'objectpath',
                     'requests>=2.11', 'lxml', 'ipython', 'future',
-                    'networkx>=3', 'pandas>=2', 'ndex2==2.0.1', 'jinja2',
+                    'networkx>=3', 'pandas>=2', 'ndex2', 'jinja2',
                     'protmapper>=0.0.29', 'obonet',
                     'tqdm', 'pybiopax>=0.0.5']
 
@@ -23,6 +23,8 @@ def main():
                       'hypothesis': ['gilda>1.0.0'],
                       'geneways': ['stemming', 'nltk<3.6'],
                       'bel': ['pybel>=0.15.0,<0.16.0'],
+                      'tkg': ['pybel>=0.15.0,<0.16.0',
+                              'texttoknowledgegraph; python_version >= "3.9"'],
                       'sbml': ['python-libsbml'],
                       # Tools and analysis
                       'machine': ['pytz', 'tzlocal', 'tweepy', 'pyyaml>=5.1.0',
@@ -97,7 +99,7 @@ def main():
                     'indra.sources.rlimsp', 'indra.sources.semrep',
                     'indra.sources.signor',
                     'indra.sources.sparser', 'indra.sources.tas',
-                    'indra.sources.tees',
+                    'indra.sources.tees', 'indra.sources.tkg',
                     'indra.sources.trips', 'indra.sources.trrust',
                     'indra.sources.ubibrowser',
                     'indra.sources.virhostnet',
