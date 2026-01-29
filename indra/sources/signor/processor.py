@@ -246,6 +246,8 @@ class SignorProcessor(object):
                     # SIGNOR's format in which it leaves extra spaces around
                     # the ID, as in 'CID: 923'
                     id = id[4:].strip()
+                if database == 'ChEBI':
+                    id = process_chebi_id(id)
                 # In older releases PubChem substance IDs were used with
                 # ChEBI as the source, these were later changed to use
                 # PUBCHEM
@@ -576,6 +578,9 @@ def process_uniprot_entry(up_id):
     # Fix for a July 2024 release issue
     if up_id == 'MDM2':
         return {'UP': 'Q00987'}
+    # Fix for a Jan 2026 release issue
+    if up_id == 'RAB1A':
+        return {'UP': 'P62820'}
     parts = up_id.split('-')
     if len(parts) == 1:
         return {'UP': up_id}
@@ -583,3 +588,10 @@ def process_uniprot_entry(up_id):
         return {'UP': parts[0], 'UPPRO': parts[1]}
     else:
         return {'UP': parts[0], 'UPISO': up_id}
+
+
+def process_chebi_id(chebi_id):
+    # Fix for a Jan 2026 release issue
+    if chebi_id == 'ribosomalRNA':
+        return 'CHEBI:18111'
+    return 'CHEBI:' + chebi_id.split(':')[1].strip()
