@@ -353,6 +353,15 @@ def get_full_xml_by_pmids(
     ------
     RuntimeError
         If the edirect CLI utilities are not installed or not found on PATH.
+
+    Notes
+    -----
+    - This function requires the edirect command line utilities to be installed
+      and visible on your PATH. See https://www.ncbi.nlm.nih.gov/books/NBK179288/
+      for instructions.
+    - Note that the output is sorted by PMID numerically e.g.,
+      10, 11, 20, 22, 1000 (and not lexicographically e.g., 10, 1000, 11, 20, 22)
+      without regard to the order in which the pmids are passed in.
     """
     # Have to use lxml.etree because the XML returned by efetch is not properly
     # formatted for ET.XML
@@ -371,11 +380,10 @@ def get_full_xml_by_pmids(
                            "for instructions.")
 
     tree = lxml_etree.fromstring(xml_bytes, parser=parser)
+    if tree is None:
+        raise RuntimeError("Could not parse XML returned by efetch.")
     # Each article is in a <PubmedArticle> tag, encapsulated in a
     # <PubmedArticleSet> tag.
-    # Note that the <PubmedArticle> tags are sorted by PMID numerically e.g.,
-    # 10, 11, 20, 1000, and not lexicographically e.g., 10, 1000, 11, 20,
-    # regardless of the order in which the pmids are passed
     if fname is not None:
         pretty_save_xml(tree, fname)
     return tree
@@ -764,7 +772,11 @@ def get_metadata_from_pubmed_article(
 
     Returns
     -------
-
+    : Dict
+        A dict containing the following fields: 'doi', 'title', 'authors',
+        'journal_title', 'journal_abbrev', 'journal_nlm_id', 'issn_list',
+        'page', 'volume', 'issue', 'issue_pub_date', 'mesh_annotations',
+        'publication_date', 'abstract', 'publication_types' and 'references'.
     """
     medline_citation = pubmed_article.find('./MedlineCitation')
     pubmed_data = pubmed_article.find('PubmedData')
