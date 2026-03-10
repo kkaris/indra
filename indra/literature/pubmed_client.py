@@ -677,7 +677,7 @@ def _get_references(reference_list, only_pmid=True):
     return references
 
 
-def _get_article_info(medline_citation, pubmed_data, detailed_authors=False):
+def _get_article_info(medline_citation, pubmed_data=None, detailed_authors=False):
     article = medline_citation.find('Article')
     pmid = _find_elem_text(medline_citation, './PMID')
     pii = _find_elem_text(article,
@@ -688,11 +688,12 @@ def _get_article_info(medline_citation, pubmed_data, detailed_authors=False):
                           './ELocationID[@EIdType="doi"][@ValidYN="Y"]')
 
     # ...and if that doesn't work, look in the ArticleIdList
-    if doi is None:
+    if doi is None and pubmed_data is not None:
         doi = _find_elem_text(pubmed_data, './/ArticleId[@IdType="doi"]')
 
     # Try to get the PMCID
-    pmcid = _find_elem_text(pubmed_data, './/ArticleId[@IdType="pmc"]')
+    if pubmed_data is not None:
+        pmcid = _find_elem_text(pubmed_data, './/ArticleId[@IdType="pmc"]')
 
     # Title
     title = _get_title_from_article_element(article)
@@ -781,13 +782,14 @@ def get_metadata_from_pubmed_article(
     if mesh_annotations:
         context_info = _get_annotations(medline_citation)
         result.update(context_info)
-    if references_included:
+    if references_included and pubmed_data is not None:
         references = _get_references(pubmed_data.find('ReferenceList'),
                                      only_pmid=(references_included == 'pmid'))
         result['references'] = references
 
-    publication_date = _get_pubmed_publication_date(pubmed_data)
-    result['publication_date'] = publication_date
+    if pubmed_data is not None:
+        publication_date = _get_pubmed_publication_date(pubmed_data)
+        result['publication_date'] = publication_date
 
     # Get the abstracts if requested
     if get_abstracts:
