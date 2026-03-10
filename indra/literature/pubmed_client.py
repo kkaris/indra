@@ -438,6 +438,9 @@ def get_abstract(pubmed_id, prepend_title=True):
 
 # A function to get the text for the element, or None if not found
 def _find_elem_text(root, xpath_string):
+    if root is None:
+        logger.warning("Root is None when trying to find element with xpath: %s" % xpath_string)
+        return None
     elem = root.find(xpath_string)
     return None if elem is None else elem.text
 
