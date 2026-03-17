@@ -5,6 +5,7 @@ import os
 import json
 import sqlite3
 import logging
+import threading
 from collections import defaultdict
 from indra.ontology.ontology_graph import IndraOntology
 from indra.ontology.bio.ontology import CACHE_DIR, BioOntology
@@ -21,9 +22,16 @@ class SqliteOntology(IndraOntology):
         super().__init__()
         self.db_path = db_path
         build_sqlite_ontology(db_path)
-        conn = sqlite3.connect(db_path)
-        self.cur = conn.cursor()
+        self._local = threading.local()
         self._initialized = True
+
+    def _get_cursor(self):
+        """Return a thread-local SQLite cursor, creating a connection on first use."""
+        if not hasattr(self._local, "conn"):
+            conn = sqlite3.connect(self.db_path)
+            self._local.conn = conn
+            self._local.cur = conn.cursor()
+        return self._local.cur
 
     def initialize(self):
         pass
@@ -32,8 +40,9 @@ class SqliteOntology(IndraOntology):
         q = """SELECT 1 FROM relationships
                WHERE child_id=? AND child_ns=? AND parent_id=? AND parent_ns=?
                LIMIT 1;"""
-        self.cur.execute(q, (id1, ns1, id2, ns2))
-        return self.cur.fetchone() is not None
+        cur = self._get_cursor()
+        cur.execute(q, (id1, ns1, id2, ns2))
+        return cur.fetchone() is not None
 
     def child_rel(self, ns, id, rel_types):
         q = """SELECT children FROM child_lookup
@@ -41,8 +50,9 @@ class SqliteOntology(IndraOntology):
                LIMIT 1;"""
         if rel_types and 'isa' in rel_types or 'partof' in rel_types:
             rel_types |= {'isa_or_partof'}
-        self.cur.execute(q, (id, ns))
-        res = self.cur.fetchone()
+        cur = self._get_cursor()
+        cur.execute(q, (id, ns))
+        res = cur.fetchone()
         if res is None:
             yield from []
         else:
@@ -72,8 +82,9 @@ class SqliteOntology(IndraOntology):
                LIMIT 1;"""
         if rel_types and 'isa' in rel_types or 'partof' in rel_types:
             rel_types |= {'isa_or_partof'}
-        self.cur.execute(q, (id, ns))
-        res = self.cur.fetchone()
+        cur = self._get_cursor()
+        cur.execute(q, (id, ns))
+        res = cur.fetchone()
         if res is None:
             yield from []
         else:
@@ -87,8 +98,9 @@ class SqliteOntology(IndraOntology):
         q = """SELECT properties FROM node_properties
                WHERE id=? AND ns=?
                LIMIT 1;"""
-        self.cur.execute(q, (id, ns))
-        res = self.cur.fetchone()
+        cur = self._get_cursor()
+        cur.execute(q, (id, ns))
+        res = cur.fetchone()
         if res is None:
             return None
         props = json.loads(res[0])
