@@ -6,6 +6,8 @@ import glob
 import gzip
 import os
 import re
+from datetime import datetime
+
 import time
 from io import StringIO
 
@@ -599,6 +601,80 @@ def _get_journal_info(medline_citation, get_issns_from_nlm: bool):
     }
 
 
+def _get_article_dates(pubmed_article_data: ET.Element) -> dict:
+    # Get the article dates from an XML <PubmedArticle> element
+    # In MedlineCitation, get, if available:
+    #  - DateRevised (contains XML elements <Year>, <Month>, <Day>)
+    #  - DateCompleted (contains XML elements <Year>, <Month>, <Day>)
+    #  - Article
+    #    - ArticleDate
+    #    - Journal -> JournalIssue -> PubDate (contains up to three elements:
+    #                                          <Year>, <Month>, <Day>)
+    # In PubmedData, under History, get all PubMedPubDate elements with their
+    # PubStatus attribute, each of which contains XML elements <Year>, <Month>,
+    # <Day> and possibly <Hour> and <Minute>
+
+    results = {}
+
+    # Get the dates from the MedlineCitation element
+    date_revised = pubmed_article_data.find("./MedlineCitation/DateRevised")
+    date_completed = pubmed_article_data.find("./MedlineCitation/DateCompleted")
+    article_date = pubmed_article_data.find("./MedlineCitation/Article/ArticleDate")
+    journal_pub_date = pubmed_article_data.find("./MedlineCitation/Article/Journal/JournalIssue/PubDate")
+    for date_type, dt in [
+        ("date_completed", date_completed),
+        ("date_revised", date_revised),
+        ("article_date", article_date),
+        ("journal_pub_date", journal_pub_date),
+    ]:
+        if dt is None:
+            continue
+        res = {}
+        if year := _find_elem_text(dt, "Year"):
+            res["year"] = int(year)
+        if month := _find_elem_text(dt, "Month"):
+            if isinstance(month, str):
+                # Month mya be spelled out as "Jul" or "Aug" etc, or may be zero
+                # padded, e.g. 03 for March. Convert to integer
+                if month.isdigit():
+                    month = int(month)
+                else:
+                    datetime_object = datetime.strptime(month, "%b")
+                    month = datetime_object.month
+            res["month"] = month
+        if day := _find_elem_text(dt, "Day"):
+            res["day"] = int(day)
+        results[date_type] = res
+
+    # Get dates from History element
+    pubmedpuddates = pubmed_article_data.findall("./PubmedData/History/PubMedPubDate")
+    results["pubmed_pubdates"] = {}
+    for pmpd in pubmedpuddates:
+        pub_status = pmpd.attrib.get("PubStatus", None)
+        if pub_status is not None:
+            res = {}
+            if year := _find_elem_text(pmpd, "Year"):
+                res["year"] = int(year)
+            if month := _find_elem_text(pmpd, "Month"):
+                if isinstance(month, str):
+                    # Month mya be spelled out as "Jul" or "Aug" etc, or is zero
+                    # padded, e.g. 03 for March. Convert to integer
+                    if month.isdigit():
+                        res["month"] = int(month)
+                    else:
+                        datetime_object = datetime.strptime(month, "%b")
+                        res["month"] = datetime_object.month
+            if day := _find_elem_text(pmpd, "Day"):
+                res["day"] = int(day)
+            if hour := _find_elem_text(pmpd, "Hour"):
+                res["hour"] = int(hour)
+            if minute := _find_elem_text(pmpd, "Minute"):
+                res["minute"] = int(minute)
+            results["pubmed_pubdates"][pub_status] = res
+
+    return results
+
+
 def _get_pubmed_publication_date(pubmed_data):
     date_dict = dict.fromkeys(['year', 'month', 'day'])
 
@@ -805,6 +881,7 @@ def get_metadata_from_pubmed_article(
     if pubmed_data is not None:
         publication_date = _get_pubmed_publication_date(pubmed_data)
         result['publication_date'] = publication_date
+    result["detailed_publication_dates"] = _get_article_dates(pubmed_article)
 
     # Get the abstracts if requested
     if get_abstracts:
@@ -853,7 +930,7 @@ def get_metadata_from_xml_tree(tree, get_issns_from_nlm=False,
 
     Returns
     -------
-    dict of dicts
+    dict[str, dict]
         Dictionary indexed by PMID. Each value is a dict containing the
         following fields: 'doi', 'title', 'authors', 'journal_title',
         'journal_abbrev', 'journal_nlm_id', 'issn_list', 'page',
@@ -971,7 +1048,7 @@ def get_metadata_for_ids(pmid_list, get_issns_from_nlm=False,
 
     Returns
     -------
-    dict of dicts
+    dict[str, dict]
         Dictionary indexed by PMID. Each value is a dict containing the
         following fields: 'doi', 'title', 'authors', 'journal_title',
         'journal_abbrev', 'journal_nlm_id', 'issn_list', 'page'.
