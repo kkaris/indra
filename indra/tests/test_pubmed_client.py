@@ -176,6 +176,71 @@ def test_get_pub_date():
     assert metadata[pmids[2]]['publication_date']['day'] == 27
 
 
+def test_get_detailed_dates():
+    time.sleep(0.5)
+    pmid = "23888980"
+    metadata = pubmed_client.get_metadata_for_ids([pmid])[pmid]
+    detailed_dates = metadata["detailed_publication_dates"]
+    assert len(detailed_dates) == 5
+    assert detailed_dates["date_completed"]["year"] == 2014
+    assert detailed_dates["date_completed"]["month"] == 3
+    assert detailed_dates["date_completed"]["day"] == 20
+    assert detailed_dates["date_revised"]["year"] == 2022
+    assert detailed_dates["date_revised"]["month"] == 4
+    assert detailed_dates["date_revised"]["day"] == 8
+    assert detailed_dates["article_date"]["year"] == 2012
+    assert detailed_dates["article_date"]["month"] == 12
+    assert detailed_dates["article_date"]["day"] == 19
+    assert detailed_dates["journal_pub_date"]["year"] == 2013
+    assert detailed_dates["journal_pub_date"]["month"] == 8
+
+    # Now check the pubmedpubdate entries, which should come from this:
+    #         <PubMedPubDate PubStatus="accepted">
+    #           <Year>2012</Year>
+    #           <Month>11</Month>
+    #           <Day>13</Day>
+    #         </PubMedPubDate>
+    #         <PubMedPubDate PubStatus="entrez">
+    #           <Year>2013</Year>
+    #           <Month>7</Month>
+    #           <Day>30</Day>
+    #           <Hour>6</Hour>
+    #           <Minute>0</Minute>
+    #         </PubMedPubDate>
+    #         <PubMedPubDate PubStatus="pubmed">
+    #           <Year>2013</Year>
+    #           <Month>7</Month>
+    #           <Day>31</Day>
+    #           <Hour>6</Hour>
+    #           <Minute>0</Minute>
+    #         </PubMedPubDate>
+    #         <PubMedPubDate PubStatus="medline">
+    #           <Year>2014</Year>
+    #           <Month>3</Month>
+    #           <Day>22</Day>
+    #           <Hour>6</Hour>
+    #           <Minute>0</Minute>
+    #         </PubMedPubDate>
+    assert detailed_dates["pubmed_pubdates"]["accepted"]["year"] == 2012
+    assert detailed_dates["pubmed_pubdates"]["accepted"]["month"] == 11
+    assert detailed_dates["pubmed_pubdates"]["accepted"]["day"] == 13
+    assert detailed_dates["pubmed_pubdates"]["entrez"]["year"] == 2013
+    assert detailed_dates["pubmed_pubdates"]["entrez"]["month"] == 7
+    assert detailed_dates["pubmed_pubdates"]["entrez"]["day"] == 30
+    assert detailed_dates["pubmed_pubdates"]["entrez"]["hour"] == 6
+    assert detailed_dates["pubmed_pubdates"]["entrez"]["minute"] == 0
+    assert detailed_dates["pubmed_pubdates"]["pubmed"]["year"] == 2013
+    assert detailed_dates["pubmed_pubdates"]["pubmed"]["month"] == 7
+    assert detailed_dates["pubmed_pubdates"]["pubmed"]["day"] == 31
+    assert detailed_dates["pubmed_pubdates"]["pubmed"]["hour"] == 6
+    assert detailed_dates["pubmed_pubdates"]["pubmed"]["minute"] == 0
+    assert detailed_dates["pubmed_pubdates"]["medline"]["year"] == 2014
+    assert detailed_dates["pubmed_pubdates"]["medline"]["month"] == 3
+    assert detailed_dates["pubmed_pubdates"]["medline"]["day"] == 22
+    assert detailed_dates["pubmed_pubdates"]["medline"]["hour"] == 6
+    assert detailed_dates["pubmed_pubdates"]["medline"]["minute"] == 0
+
+
 @pytest.mark.webservice
 def test_send_request_invalid():
     time.sleep(0.5)
