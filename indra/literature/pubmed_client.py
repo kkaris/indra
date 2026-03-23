@@ -634,7 +634,7 @@ def _get_article_dates(pubmed_article_data: ET.Element) -> dict:
             res["year"] = int(year)
         if month := _find_elem_text(dt, "Month"):
             if isinstance(month, str):
-                # Month mya be spelled out as "Jul" or "Aug" etc, or may be zero
+                # Month may be spelled out as "Jul" or "Aug" etc, or may be zero
                 # padded, e.g. 03 for March. Convert to integer
                 if month.isdigit():
                     month = int(month)
