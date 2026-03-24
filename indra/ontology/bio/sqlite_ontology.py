@@ -23,6 +23,7 @@ class SqliteOntology(IndraOntology):
         self.db_path = db_path
         build_sqlite_ontology(db_path)
         self._local = threading.local()
+        self.cur = self._get_cursor()
         self._initialized = True
 
     def _get_cursor(self):
@@ -40,9 +41,8 @@ class SqliteOntology(IndraOntology):
         q = """SELECT 1 FROM relationships
                WHERE child_id=? AND child_ns=? AND parent_id=? AND parent_ns=?
                LIMIT 1;"""
-        cur = self._get_cursor()
-        cur.execute(q, (id1, ns1, id2, ns2))
-        return cur.fetchone() is not None
+        self.cur.execute(q, (id1, ns1, id2, ns2))
+        return self.cur.fetchone() is not None
 
     def child_rel(self, ns, id, rel_types):
         q = """SELECT children FROM child_lookup
@@ -50,9 +50,8 @@ class SqliteOntology(IndraOntology):
                LIMIT 1;"""
         if rel_types and 'isa' in rel_types or 'partof' in rel_types:
             rel_types |= {'isa_or_partof'}
-        cur = self._get_cursor()
-        cur.execute(q, (id, ns))
-        res = cur.fetchone()
+        self.cur.execute(q, (id, ns))
+        res = self.cur.fetchone()
         if res is None:
             yield from []
         else:
@@ -82,9 +81,8 @@ class SqliteOntology(IndraOntology):
                LIMIT 1;"""
         if rel_types and 'isa' in rel_types or 'partof' in rel_types:
             rel_types |= {'isa_or_partof'}
-        cur = self._get_cursor()
-        cur.execute(q, (id, ns))
-        res = cur.fetchone()
+        self.cur.execute(q, (id, ns))
+        res = self.cur.fetchone()
         if res is None:
             yield from []
         else:
@@ -98,9 +96,8 @@ class SqliteOntology(IndraOntology):
         q = """SELECT properties FROM node_properties
                WHERE id=? AND ns=?
                LIMIT 1;"""
-        cur = self._get_cursor()
-        cur.execute(q, (id, ns))
-        res = cur.fetchone()
+        self.cur.execute(q, (id, ns))
+        res = self.cur.fetchone()
         if res is None:
             return None
         props = json.loads(res[0])
