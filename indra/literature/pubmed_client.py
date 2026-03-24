@@ -625,9 +625,11 @@ def _get_article_dates(pubmed_article_data: ET.Element) -> dict:
         if dt is None:
             continue
         res = {}
-        if year := _find_elem_text(dt, "Year"):
+        year = _find_elem_text(dt, "Year")
+        if year is not None:
             res["year"] = int(year)
-        if month := _find_elem_text(dt, "Month"):
+        month = _find_elem_text(dt, "Month")
+        if month is not None:
             if isinstance(month, str):
                 # Month may be spelled out as "Jul" or "Aug" etc, or may be zero
                 # padded, e.g. 03 for March. Convert to integer
@@ -637,7 +639,8 @@ def _get_article_dates(pubmed_article_data: ET.Element) -> dict:
                     datetime_object = datetime.strptime(month, "%b")
                     month = datetime_object.month
             res["month"] = month
-        if day := _find_elem_text(dt, "Day"):
+        day = _find_elem_text(dt, "Day")
+        if day is not None:
             res["day"] = int(day)
         results[date_type] = res
 
@@ -648,9 +651,11 @@ def _get_article_dates(pubmed_article_data: ET.Element) -> dict:
         pub_status = pmpd.attrib.get("PubStatus", None)
         if pub_status is not None:
             res = {}
-            if year := _find_elem_text(pmpd, "Year"):
+            year = _find_elem_text(pmpd, "Year")
+            if year is not None:
                 res["year"] = int(year)
-            if month := _find_elem_text(pmpd, "Month"):
+            month = _find_elem_text(pmpd, "Month")
+            if month is not None:
                 if isinstance(month, str):
                     # Month mya be spelled out as "Jul" or "Aug" etc, or is zero
                     # padded, e.g. 03 for March. Convert to integer
@@ -659,11 +664,14 @@ def _get_article_dates(pubmed_article_data: ET.Element) -> dict:
                     else:
                         datetime_object = datetime.strptime(month, "%b")
                         res["month"] = datetime_object.month
-            if day := _find_elem_text(pmpd, "Day"):
+            day = _find_elem_text(pmpd, "Day")
+            if day is not None:
                 res["day"] = int(day)
-            if hour := _find_elem_text(pmpd, "Hour"):
+            hour = _find_elem_text(pmpd, "Hour")
+            if hour is not None:
                 res["hour"] = int(hour)
-            if minute := _find_elem_text(pmpd, "Minute"):
+            minute = _find_elem_text(pmpd, "Minute")
+            if minute is not None:
                 res["minute"] = int(minute)
             results["pubmed_pubdates"][pub_status] = res
 
