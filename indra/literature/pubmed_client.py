@@ -386,8 +386,6 @@ def get_full_xml_by_pmids(
                            "for instructions.")
 
     tree = lxml_etree.fromstring(xml_bytes, parser=parser)
-    if tree is None:
-        raise RuntimeError("Could not parse XML returned by efetch.")
     # Each article is in a <PubmedArticle> tag, encapsulated in a
     # <PubmedArticleSet> tag.
     if fname is not None:
@@ -440,9 +438,6 @@ def get_abstract(pubmed_id, prepend_title=True):
 
 # A function to get the text for the element, or None if not found
 def _find_elem_text(root, xpath_string):
-    if root is None:
-        logger.warning("Root is None when trying to find element with xpath: %s" % xpath_string)
-        return None
     elem = root.find(xpath_string)
     return None if elem is None else elem.text
 
@@ -764,7 +759,7 @@ def _get_references(reference_list, only_pmid=True):
     return references
 
 
-def _get_article_info(medline_citation, pubmed_data=None, detailed_authors=False):
+def _get_article_info(medline_citation, pubmed_data, detailed_authors=False):
     article = medline_citation.find('Article')
     pmid = _find_elem_text(medline_citation, './PMID')
     pii = _find_elem_text(article,
@@ -775,12 +770,11 @@ def _get_article_info(medline_citation, pubmed_data=None, detailed_authors=False
                           './ELocationID[@EIdType="doi"][@ValidYN="Y"]')
 
     # ...and if that doesn't work, look in the ArticleIdList
-    if doi is None and pubmed_data is not None:
+    if doi is None:
         doi = _find_elem_text(pubmed_data, './/ArticleId[@IdType="doi"]')
 
     # Try to get the PMCID
-    if pubmed_data is not None:
-        pmcid = _find_elem_text(pubmed_data, './/ArticleId[@IdType="pmc"]')
+    pmcid = _find_elem_text(pubmed_data, './/ArticleId[@IdType="pmc"]')
 
     # Title
     title = _get_title_from_article_element(article)
@@ -873,14 +867,13 @@ def get_metadata_from_pubmed_article(
     if mesh_annotations:
         context_info = _get_annotations(medline_citation)
         result.update(context_info)
-    if references_included and pubmed_data is not None:
+    if references_included:
         references = _get_references(pubmed_data.find('ReferenceList'),
                                      only_pmid=(references_included == 'pmid'))
         result['references'] = references
 
-    if pubmed_data is not None:
-        publication_date = _get_pubmed_publication_date(pubmed_data)
-        result['publication_date'] = publication_date
+    publication_date = _get_pubmed_publication_date(pubmed_data)
+    result['publication_date'] = publication_date
     result["detailed_publication_dates"] = _get_article_dates(pubmed_article)
 
     # Get the abstracts if requested
