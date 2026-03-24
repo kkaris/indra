@@ -5,6 +5,7 @@ import os
 import json
 import sqlite3
 import logging
+import threading
 from collections import defaultdict
 from indra.ontology.ontology_graph import IndraOntology
 from indra.ontology.bio.ontology import CACHE_DIR, BioOntology
@@ -21,9 +22,18 @@ class SqliteOntology(IndraOntology):
         super().__init__()
         self.db_path = db_path
         build_sqlite_ontology(db_path)
-        conn = sqlite3.connect(db_path)
-        self.cur = conn.cursor()
+        self._local = threading.local()
+        self._local.conn = None
+        self.cur = self._get_cursor()
         self._initialized = True
+
+    def _get_cursor(self):
+        """Return a thread-local SQLite cursor, creating a connection on first use."""
+        if self._local.conn is None:
+            conn = sqlite3.connect(self.db_path)
+            self._local.conn = conn
+            self._local.cur = conn.cursor()
+        return self._local.cur
 
     def initialize(self):
         pass
