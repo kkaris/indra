@@ -668,10 +668,10 @@ def _get_article_dates(pubmed_article_data: ET.Element) -> dict:
             if day is not None:
                 res["day"] = int(day)
             hour = _find_elem_text(pmpd, "Hour")
-            if hour is not None:
+            if hour is not None and hour.isdigit():
                 res["hour"] = int(hour)
             minute = _find_elem_text(pmpd, "Minute")
-            if minute is not None:
+            if minute is not None and minute.isdigit():
                 res["minute"] = int(minute)
             results["pubmed_pubdates"][pub_status] = res
 
