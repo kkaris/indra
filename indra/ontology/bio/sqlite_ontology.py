@@ -23,13 +23,18 @@ class SqliteOntology(IndraOntology):
         self.db_path = db_path
         build_sqlite_ontology(db_path)
         self._local = threading.local()
-        self._local.conn = None
-        self.cur = self._get_cursor()
         self._initialized = True
+
+    @property
+    def cur(self):
+        return self._get_cursor()
 
     def _get_cursor(self):
         """Return a thread-local SQLite cursor, creating a connection on first use."""
-        if self._local.conn is None:
+        # Use hasattr rather than checking for None because each thread has its own
+        # local instance of threading.local, which may or may not have the conn
+        # attribute set
+        if not hasattr(self._local, 'conn'):
             conn = sqlite3.connect(self.db_path)
             self._local.conn = conn
             self._local.cur = conn.cursor()
