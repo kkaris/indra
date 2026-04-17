@@ -4,6 +4,7 @@ import re
 import logging
 import os.path
 import requests
+from functools import lru_cache
 from lxml import etree
 from lxml.etree import QName
 import xml.etree.ElementTree as ET
@@ -22,6 +23,7 @@ logger = logging.getLogger(__name__)
 
 pmc_url = 'https://www.ncbi.nlm.nih.gov/pmc/oai/oai.cgi'
 pmid_convert_url = 'https://www.ncbi.nlm.nih.gov/pmc/utils/idconv/v1.0/'
+pmc_s3_base_url = 'https://pmc-oa-opendata.s3.amazonaws.com'
 
 # Paths to resource files
 pmids_fulltext_path = os.path.join(os.path.dirname(__file__),
@@ -35,6 +37,34 @@ pmids_auth_xml_path = os.path.join(os.path.dirname(__file__),
 # Define global dict containing lists of PMIDs among mineable PMCs
 # to be lazily initialized
 pmids_fulltext_dict = {}
+
+
+@lru_cache(maxsize=10000)
+def get_s3_versions(pmcid):
+    """Return available versions of a PMC article on the PMC Cloud S3 bucket.
+
+    Parameters
+    ----------
+    pmcid : str
+        A PubMed Central ID in 'PMC<digits>' form.
+
+    Returns
+    -------
+    tuple of int
+        Sorted tuple of available version numbers, or an empty tuple if the
+        article is not present on the bucket.
+    """
+    params = {'prefix': f'{pmcid}.', 'delimiter': '/'}
+    res = requests.get(pmc_s3_base_url, params=params)
+    res.raise_for_status()
+    tree = ET.fromstring(res.content)
+    ns = '{http://s3.amazonaws.com/doc/2006-03-01/}'
+    versions = []
+    for prefix_el in tree.findall(f'{ns}CommonPrefixes/{ns}Prefix'):
+        m = re.match(rf'{re.escape(pmcid)}\.(\d+)/', prefix_el.text or '')
+        if m:
+            versions.append(int(m.group(1)))
+    return tuple(sorted(versions))
 
 
 def id_lookup(paper_id, idtype=None):
