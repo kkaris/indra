@@ -2,7 +2,7 @@ from __future__ import absolute_import, print_function, unicode_literals
 from builtins import dict, str
 import re
 import logging
-import os.path
+import os
 import requests
 from functools import lru_cache
 from lxml import etree
@@ -222,6 +222,57 @@ def get_text_s3(pmcid, version=None):
     """
     res = _get_s3_artifact(pmcid, 'txt', version=version)
     return res.text if res is not None else None
+
+
+def download_article_files_s3(pmcid, out_dir, version=None, include=None):
+    """Download a PMC article's files from the PMC Cloud S3 bucket.
+
+    Files are saved under ``<out_dir>/PMC<id>.<version>/<filename>``,
+    mirroring the bucket's prefix layout.
+
+    Parameters
+    ----------
+    pmcid : str
+        A PubMed Central ID in 'PMC<digits>' form.
+    out_dir : str
+        Local directory where files will be written. Created if missing.
+    version : Optional[int]
+        The article version to fetch. If None, the latest available version
+        is used.
+    include : Optional[Iterable[str]]
+        If given, only files whose lowercase extension matches one of these
+        strings are downloaded (e.g. ``['xml', 'txt']``). Extensions should
+        be given without the leading dot. If None, all files in the
+        article's prefix are downloaded.
+
+    Returns
+    -------
+    list of str
+        Paths to the downloaded files. Empty if the article (or requested
+        version) is not present on the bucket.
+    """
+    if version is None:
+        version = get_latest_s3_version(pmcid)
+        if version is None:
+            return []
+    keys = list_article_files_s3(pmcid, version=version)
+    if include is not None:
+        include = {ext.lower().lstrip('.') for ext in include}
+        keys = [k for k in keys if k.rsplit('.', 1)[-1].lower() in include]
+    article_dir = os.path.join(out_dir, f'{pmcid}.{version}')
+    os.makedirs(article_dir, exist_ok=True)
+    paths = []
+    for key in keys:
+        url = f'{pmc_s3_base_url}/{key}'
+        filename = key.rsplit('/', 1)[-1]
+        local_path = os.path.join(article_dir, filename)
+        res = requests.get(url, stream=True)
+        res.raise_for_status()
+        with open(local_path, 'wb') as f:
+            for chunk in res.iter_content(chunk_size=65536):
+                f.write(chunk)
+        paths.append(local_path)
+    return paths
 
 
 def id_lookup(paper_id, idtype=None):
