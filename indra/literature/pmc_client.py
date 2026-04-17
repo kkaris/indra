@@ -127,6 +127,103 @@ def list_article_files_s3(pmcid, version=None):
     return keys
 
 
+def _get_s3_artifact(pmcid, ext, version=None):
+    """Fetch a named artifact for a PMC article from the PMC Cloud S3 bucket.
+
+    The artifact is fetched from the canonical key
+    ``PMC<id>.<version>/PMC<id>.<version>.<ext>``.
+
+    Parameters
+    ----------
+    pmcid : str
+        A PubMed Central ID in 'PMC<digits>' form.
+    ext : str
+        The artifact file extension, e.g. 'xml', 'txt', 'json', or 'pdf'.
+    version : Optional[int]
+        The article version to fetch. If None, the latest available version
+        is resolved via :func:`get_latest_s3_version`.
+
+    Returns
+    -------
+    Optional[requests.Response]
+        The HTTP response if the artifact was fetched successfully, or None
+        if the article is not present on the bucket.
+    """
+    if version is None:
+        version = get_latest_s3_version(pmcid)
+        if version is None:
+            return None
+    url = f'{pmc_s3_base_url}/{pmcid}.{version}/{pmcid}.{version}.{ext}'
+    res = requests.get(url)
+    res.raise_for_status()
+    return res
+
+
+def get_metadata_s3(pmcid, version=None):
+    """Return the JSON metadata for a PMC article from the PMC Cloud bucket.
+
+    Parameters
+    ----------
+    pmcid : str
+        A PubMed Central ID in 'PMC<digits>' form.
+    version : Optional[int]
+        The article version to fetch. If None, the latest available version
+        is used.
+
+    Returns
+    -------
+    Optional[dict]
+        The parsed JSON metadata dict, containing keys such as 'pmid',
+        'doi', 'title', 'citation', 'license_code', 'is_retracted', and
+        s3:// URLs for the text/xml/pdf/media files. None if the article
+        is not present on the bucket.
+    """
+    res = _get_s3_artifact(pmcid, 'json', version=version)
+    return res.json() if res is not None else None
+
+
+def get_xml_s3(pmcid, version=None):
+    """Return the NLM XML for a PMC article from the PMC Cloud S3 bucket.
+
+    Parameters
+    ----------
+    pmcid : str
+        A PubMed Central ID in 'PMC<digits>' form.
+    version : Optional[int]
+        The article version to fetch. If None, the latest available version
+        is used.
+
+    Returns
+    -------
+    Optional[str]
+        The XML content as a unicode string, or None if the article is not
+        present on the bucket.
+    """
+    res = _get_s3_artifact(pmcid, 'xml', version=version)
+    return res.text if res is not None else None
+
+
+def get_text_s3(pmcid, version=None):
+    """Return the plain text for a PMC article from the PMC Cloud S3 bucket.
+
+    Parameters
+    ----------
+    pmcid : str
+        A PubMed Central ID in 'PMC<digits>' form.
+    version : Optional[int]
+        The article version to fetch. If None, the latest available version
+        is used.
+
+    Returns
+    -------
+    Optional[str]
+        The plain-text content as a unicode string, or None if the article
+        is not present on the bucket.
+    """
+    res = _get_s3_artifact(pmcid, 'txt', version=version)
+    return res.text if res is not None else None
+
+
 def id_lookup(paper_id, idtype=None):
     """Return PMID, DOI and PMCID based on an input ID.
 
