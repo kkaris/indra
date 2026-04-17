@@ -24,6 +24,7 @@ logger = logging.getLogger(__name__)
 pmc_url = 'https://www.ncbi.nlm.nih.gov/pmc/oai/oai.cgi'
 pmid_convert_url = 'https://www.ncbi.nlm.nih.gov/pmc/utils/idconv/v1.0/'
 pmc_s3_base_url = 'https://pmc-oa-opendata.s3.amazonaws.com'
+s3_nsmap = {'s3': 'http://s3.amazonaws.com/doc/2006-03-01/'}
 
 # Paths to resource files
 pmids_fulltext_path = os.path.join(os.path.dirname(__file__),
@@ -58,9 +59,8 @@ def get_s3_versions(pmcid):
     res = requests.get(pmc_s3_base_url, params=params)
     res.raise_for_status()
     tree = ET.fromstring(res.content)
-    ns = '{http://s3.amazonaws.com/doc/2006-03-01/}'
     versions = []
-    for prefix_el in tree.findall(f'{ns}CommonPrefixes/{ns}Prefix'):
+    for prefix_el in tree.findall('s3:CommonPrefixes/s3:Prefix', s3_nsmap):
         m = re.match(rf'{re.escape(pmcid)}\.(\d+)/', prefix_el.text or '')
         if m:
             versions.append(int(m.group(1)))
@@ -83,6 +83,48 @@ def get_latest_s3_version(pmcid):
     """
     versions = get_s3_versions(pmcid)
     return max(versions) if versions else None
+
+
+def list_article_files_s3(pmcid, version=None):
+    """List the S3 object keys for a PMC article on the PMC Cloud bucket.
+
+    Parameters
+    ----------
+    pmcid : str
+        A PubMed Central ID in 'PMC<digits>' form.
+    version : Optional[int]
+        The article version to list. If None, the latest available version
+        is used.
+
+    Returns
+    -------
+    list of str
+        List of S3 object keys under the PMC<id>.<version>/ prefix. Empty
+        if the article (or requested version) is not present.
+    """
+    if version is None:
+        version = get_latest_s3_version(pmcid)
+        if version is None:
+            return []
+    prefix = f'{pmcid}.{version}/'
+    keys = []
+    marker = ''
+    while True:
+        params = {'prefix': prefix, 'marker': marker}
+        res = requests.get(pmc_s3_base_url, params=params)
+        res.raise_for_status()
+        tree = ET.fromstring(res.content)
+        for contents in tree.findall('s3:Contents', s3_nsmap):
+            key = contents.findtext('s3:Key', namespaces=s3_nsmap)
+            if key:
+                keys.append(key)
+        truncated = tree.findtext('s3:IsTruncated', namespaces=s3_nsmap)
+        if not truncated == 'true':
+            break
+        marker = keys[-1] if keys else ''
+        if not marker:
+            break
+    return keys
 
 
 def id_lookup(paper_id, idtype=None):
