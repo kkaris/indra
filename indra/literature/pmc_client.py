@@ -224,6 +224,26 @@ def get_text_s3(pmcid, version=None):
     return res.text if res is not None else None
 
 
+def get_pdf_s3(pmcid, version=None):
+    """Return the PDF for a PMC article from the PMC Cloud S3 bucket.
+
+    Parameters
+    ----------
+    pmcid : str
+        A PubMed Central ID in 'PMC<digits>' form.
+    version : Optional[int]
+        The article version to fetch. If None, the latest available version
+        is used.
+
+    Returns
+    -------
+    Optional[str]
+        The PDF content or None if the article is not present on the bucket.
+    """
+    res = _get_s3_artifact(pmcid, 'pdf', version=version)
+    return res.content if res is not None else None
+
+
 def download_article_files_s3(pmcid, out_dir, version=None, include=None):
     """Download a PMC article's files from the PMC Cloud S3 bucket.
 
