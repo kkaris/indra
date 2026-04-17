@@ -67,6 +67,24 @@ def get_s3_versions(pmcid):
     return tuple(sorted(versions))
 
 
+def get_latest_s3_version(pmcid):
+    """Return the latest available version of a PMC article on S3.
+
+    Parameters
+    ----------
+    pmcid : str
+        A PubMed Central ID in 'PMC<digits>' form.
+
+    Returns
+    -------
+    Optional[int]
+        The highest available version number, or None if the article is not
+        present on the bucket.
+    """
+    versions = get_s3_versions(pmcid)
+    return max(versions) if versions else None
+
+
 def id_lookup(paper_id, idtype=None):
     """Return PMID, DOI and PMCID based on an input ID.
 
