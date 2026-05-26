@@ -258,10 +258,9 @@ Molecular Systems Biology, e11325.
 For detailed installation instructions,
 [see the documentation](http://indra.readthedocs.io/en/latest/installation.html).
 
-INDRA currently supports Python 3.8-3.10. The last release of INDRA compatible
-with Python 2.7 is 1.10, the last release fully compatible with Python 3.5
-is 1.17. Most usages of INDRA will work with other Python versions, however,
-full compatibility is currently only tested with 3.8-3.10.
+INDRA is tested on Python Python 3.10-3.12. Most usages of INDRA will work with
+other Python versions, however, full compatibility is currently only tested
+for these.
 
 The preferred way to install INDRA is by pointing pip to the source repository
 as
