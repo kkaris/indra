@@ -13,7 +13,8 @@ def main():
                     'requests>=2.11', 'lxml', 'ipython', 'future',
                     'networkx>=3', 'pandas>=2', 'ndex2', 'jinja2',
                     'protmapper>=0.0.29', 'obonet',
-                    'tqdm', 'pybiopax>=0.0.5', 'setuptools']
+                    # pybel requires setuptools<81
+                    'tqdm', 'pybiopax>=0.0.5', 'setuptools<81']
 
     extras_require = {
                       # Inputs and outputs
