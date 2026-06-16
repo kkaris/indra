@@ -82,6 +82,7 @@ def process_row(row, up_web_fallback=False):
 
 def get_agent_from_grounding(grounding, up_web_fallback=False):
     """Return an INDRA Agent based on a grounding annotation."""
+    breakpoint()
     db_ns, db_id = grounding.split(':')
     # Assume UniProt or RefSeq IDs
     assert db_ns in {'uniprotkb', 'refseq', 'ddbj/embl/genbank'}, db_ns

@@ -115,5 +115,5 @@ def test_get_uppro_name():
 def test_name_web_fallback():
     ag = get_agent_from_grounding('uniprotkb:Q174W8', up_web_fallback=False)
     assert ag.name == 'Q174W8'
-    ag = get_agent_from_grounding('uniprotkb:Q174W8', up_web_fallback=True)
-    assert ag.name == 'GPRFZ2'
+    ag = get_agent_from_grounding('uniprotkb:A0A0S1MMP8', up_web_fallback=True)
+    assert ag.name == 'COI'
