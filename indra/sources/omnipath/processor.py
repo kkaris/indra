@@ -42,14 +42,24 @@ class OmniPathProcessor(object):
             return []
         for mod_entry in ptm_json:
             # Skip entries without references
-            if not mod_entry['references']:
+            references = mod_entry['references']
+            if not references:
                 continue
             enz = self._agent_from_up_id(mod_entry['enzyme'])
             sub = self._agent_from_up_id(mod_entry['substrate'])
             res = mod_entry['residue_type']
             pos = mod_entry['residue_offset']
             evidence = []
-            for source_pmid in mod_entry['references']:
+            if isinstance(references, str):
+                # Handle corner case with ;-separated references e.g.
+                # TRIP:11290752;TRIP:12601176;...
+                if ';' in references:
+                    references = references.split(';')
+                # Handle corner case with simple string reference e.g.,
+                # SIGNOR:11201744
+                else:
+                    references = [references]
+            for source_pmid in references:
                 source_db, pmid_ref = source_pmid.split(':', 1)
                 # Skip evidence from already known sources
                 if source_db.lower() in ignore_srcs:
@@ -96,7 +106,8 @@ class OmniPathProcessor(object):
             return ligrec_stmts
 
         for lr_entry in ligrec_json:
-            if not lr_entry['references']:
+            references = lr_entry['references']
+            if not references:
                 no_refs += 1
                 continue
             if len(lr_entry['sources']) == 1 and \
@@ -105,7 +116,16 @@ class OmniPathProcessor(object):
 
             # Assemble evidence
             evidence = []
-            for source_pmid in lr_entry['references']:
+            if isinstance(references, str):
+                # Handle corner case with ;-separated references e.g.
+                # TRIP:11290752;TRIP:12601176;...
+                if ';' in references:
+                    references = references.split(';')
+                # Handle corner case with simple string reference e.g.,
+                # SIGNOR:11201744
+                else:
+                    references = [references]
+            for source_pmid in references:
                 source_db, pmid = source_pmid.split(':')
                 # Skip evidence from already known sources
                 if source_db.lower() in ignore_srcs:

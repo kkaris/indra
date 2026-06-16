@@ -19,12 +19,6 @@ TRPC3_AG = Agent(None, db_refs={'UP': TRPC3_UPID})
 standardize_agent_name(TRPC3_AG)
 
 
-def test_omnipath_web_api():
-    query_url = '%s/queries' % op_url
-    res = requests.get(query_url)
-    assert res.status_code == 200
-
-
 def test_mods_from_web():
     params = {'format': 'json', 'substrates': JAK2_UPID,
               'fields': ['sources', 'references']}

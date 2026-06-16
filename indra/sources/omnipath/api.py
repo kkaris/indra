@@ -5,7 +5,7 @@ from .processor import OmniPathProcessor
 logger = logging.getLogger(__name__)
 
 
-op_url = 'http://omnipathdb.org'
+op_url = 'https://omnipathdb.org'
 
 
 def process_from_web():
