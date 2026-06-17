@@ -9,7 +9,10 @@ with open(readme_path, 'r', encoding='utf-8') as fh:
 
 
 def main():
-    install_list = ['pysb @ git+https://github.com/pysb/pysb.git', 'objectpath',
+    install_list = ['pysb @ git+https://github.com/pysb/pysb.git ; '
+                    'python_version >= "3.10"',
+                    'pysb<=1.16.0; python_version < "3.10"',
+                    'objectpath',
                     'requests>=2.11', 'lxml', 'ipython', 'future',
                     'networkx>=3', 'pandas>=2', 'ndex2', 'jinja2',
                     'protmapper>=0.0.29', 'obonet',
@@ -19,13 +22,15 @@ def main():
     extras_require = {
                       # Inputs and outputs
                       'trips_offline': ['pykqml'],
-                      'reach_offline': ['cython<3', 'pyjnius==1.1.4'],
-                      'eidos_offline': ['cython<3', 'pyjnius==1.1.4'],
+                      'reach_offline': ['pyjnius>=1.6.1'],
+                      'eidos_offline': ['pyjnius>=1.6.1'],
                       'hypothesis': ['gilda>1.0.0'],
                       'geneways': ['stemming', 'nltk<3.6'],
                       'bel': ['pybel>=0.15.0,<0.16.0'],
+                      # texttoknowledgegraph pins lxml==5.2.1 which has no Python
+                      # 3.13 wheels, so we skip it on 3.13 until upstream unpins.
                       'tkg': ['pybel>=0.15.0,<0.16.0',
-                              'texttoknowledgegraph; python_version >= "3.9"'],
+                              'texttoknowledgegraph; python_version >= "3.9" and python_version < "3.13"'],
                       'sbml': ['python-libsbml'],
                       # Tools and analysis
                       'machine': ['pytz', 'tzlocal', 'tweepy', 'pyyaml>=5.1.0',
@@ -43,9 +48,7 @@ def main():
                               'flask_cors',
                               'docstring-parser',
                               'gunicorn'],
-                      # scikit-learn 1.5.0 breaks DisambManager.run_adeft_disambiguation
-                      # see: https://github.com/gyorilab/adeft/issues/80
-                      'sklearn_belief': ['scikit-learn<1.5.0'],
+                      'sklearn_belief': ['scikit-learn'],
                       'owl': ['pronto'],
                       'tests':
                         ['pytest',
@@ -132,6 +135,7 @@ def main():
             'Programming Language :: Python :: 3.10',
             'Programming Language :: Python :: 3.11',
             'Programming Language :: Python :: 3.12',
+            'Programming Language :: Python :: 3.13',
             'Topic :: Scientific/Engineering :: Bio-Informatics',
             'Topic :: Scientific/Engineering :: Chemistry',
             'Topic :: Scientific/Engineering :: Mathematics',
