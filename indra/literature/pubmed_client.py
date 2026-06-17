@@ -6,6 +6,8 @@ import glob
 import gzip
 import os
 import re
+from datetime import datetime
+
 import time
 from io import StringIO
 
@@ -357,6 +359,15 @@ def get_full_xml_by_pmids(
     ------
     RuntimeError
         If the edirect CLI utilities are not installed or not found on PATH.
+
+    Notes
+    -----
+    - This function requires the edirect command line utilities to be installed
+      and visible on your PATH. See https://www.ncbi.nlm.nih.gov/books/NBK179288/
+      for instructions.
+    - Note that the output is sorted by PMID numerically e.g.,
+      10, 11, 20, 22, 1000 (and not lexicographically e.g., 10, 1000, 11, 20, 22)
+      without regard to the order in which the pmids are passed in.
     """
     # Have to use lxml.etree because the XML returned by efetch is not properly
     # formatted for ET.XML
@@ -377,9 +388,6 @@ def get_full_xml_by_pmids(
     tree = lxml_etree.fromstring(xml_bytes, parser=parser)
     # Each article is in a <PubmedArticle> tag, encapsulated in a
     # <PubmedArticleSet> tag.
-    # Note that the <PubmedArticle> tags are sorted by PMID numerically e.g.,
-    # 10, 11, 20, 1000, and not lexicographically e.g., 10, 1000, 11, 20,
-    # regardless of the order in which the pmids are passed
     if fname is not None:
         pretty_save_xml(tree, fname)
     return tree
@@ -588,6 +596,77 @@ def _get_journal_info(medline_citation, get_issns_from_nlm: bool):
     }
 
 
+def _parse_date_elem(date_elem, with_time=False):
+    # Parse a date XML element with <Year>, <Month>, <Day> children (and
+    # optionally <Hour>, <Minute>) into a dict of integers.
+    res = {}
+    year = _find_elem_text(date_elem, "Year")
+    if year is not None and year.isdigit():
+        res["year"] = int(year)
+    month = _find_elem_text(date_elem, "Month")
+    if month is not None:
+        # Month may be spelled out as "Jul" or "Aug" etc, or may be zero
+        # padded, e.g. 03 for March. Convert to integer in either case.
+        if month.isdigit():
+            res["month"] = int(month)
+        else:
+            res["month"] = datetime.strptime(month, "%b").month
+    day = _find_elem_text(date_elem, "Day")
+    if day is not None and day.isdigit():
+        res["day"] = int(day)
+    if with_time:
+        hour = _find_elem_text(date_elem, "Hour")
+        if hour is not None and hour.isdigit():
+            res["hour"] = int(hour)
+        minute = _find_elem_text(date_elem, "Minute")
+        if minute is not None and minute.isdigit():
+            res["minute"] = int(minute)
+    return res
+
+
+def _get_article_dates(pubmed_article_data: ET.Element) -> dict:
+    # Get the article dates from an XML <PubmedArticle> element
+    # In MedlineCitation, get, if available:
+    #  - DateRevised (contains XML elements <Year>, <Month>, <Day>)
+    #  - DateCompleted (contains XML elements <Year>, <Month>, <Day>)
+    #  - Article
+    #    - ArticleDate
+    #    - Journal -> JournalIssue -> PubDate (contains up to three elements:
+    #                                          <Year>, <Month>, <Day>)
+    # In PubmedData, under History, get all PubMedPubDate elements with their
+    # PubStatus attribute, each of which contains XML elements <Year>, <Month>,
+    # <Day> and possibly <Hour> and <Minute>
+
+    results = {}
+
+    # Get the dates from the MedlineCitation element
+    mc = "./MedlineCitation"
+    date_paths = [
+        ("date_completed", mc + "/DateCompleted"),
+        ("date_revised", mc + "/DateRevised"),
+        ("article_date", mc + "/Article/ArticleDate"),
+        ("journal_pub_date",
+         mc + "/Article/Journal/JournalIssue/PubDate"),
+    ]
+    for date_type, date_path in date_paths:
+        dt = pubmed_article_data.find(date_path)
+        if dt is None:
+            continue
+        results[date_type] = _parse_date_elem(dt)
+
+    # Get dates from History element
+    pubmed_pub_dates = \
+        pubmed_article_data.findall("./PubmedData/History/PubMedPubDate")
+    results["pubmed_pubdates"] = {}
+    for pmpd in pubmed_pub_dates:
+        pub_status = pmpd.attrib.get("PubStatus", None)
+        if pub_status is not None:
+            results["pubmed_pubdates"][pub_status] = \
+                _parse_date_elem(pmpd, with_time=True)
+
+    return results
+
+
 def _get_pubmed_publication_date(pubmed_data):
     date_dict = dict.fromkeys(['year', 'month', 'day'])
 
@@ -767,7 +846,12 @@ def get_metadata_from_pubmed_article(
 
     Returns
     -------
-
+    : Dict
+        A dict containing the following fields: 'doi', 'title', 'authors',
+        'journal_title', 'journal_abbrev', 'journal_nlm_id', 'issn_list',
+        'page', 'volume', 'issue', 'issue_pub_date', 'mesh_annotations',
+        'publication_date', 'detailed_publication_dates', 'abstract',
+        'publication_types' and 'references'.
     """
     medline_citation = pubmed_article.find('./MedlineCitation')
     pubmed_data = pubmed_article.find('PubmedData')
@@ -788,6 +872,7 @@ def get_metadata_from_pubmed_article(
 
     publication_date = _get_pubmed_publication_date(pubmed_data)
     result['publication_date'] = publication_date
+    result["detailed_publication_dates"] = _get_article_dates(pubmed_article)
 
     # Get the abstracts if requested
     if get_abstracts:
@@ -836,7 +921,7 @@ def get_metadata_from_xml_tree(tree, get_issns_from_nlm=False,
 
     Returns
     -------
-    dict of dicts
+    dict[str, dict]
         Dictionary indexed by PMID. Each value is a dict containing the
         following fields: 'doi', 'title', 'authors', 'journal_title',
         'journal_abbrev', 'journal_nlm_id', 'issn_list', 'page',
@@ -954,7 +1039,7 @@ def get_metadata_for_ids(pmid_list, get_issns_from_nlm=False,
 
     Returns
     -------
-    dict of dicts
+    dict[str, dict]
         Dictionary indexed by PMID. Each value is a dict containing the
         following fields: 'doi', 'title', 'authors', 'journal_title',
         'journal_abbrev', 'journal_nlm_id', 'issn_list', 'page'.

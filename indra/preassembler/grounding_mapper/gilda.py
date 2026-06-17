@@ -15,7 +15,7 @@ from indra.pipeline import register_pipeline
 logger = logging.getLogger(__name__)
 
 grounding_service_url = get_config('GILDA_URL', failure_ok=True) \
-    if has_config('GILDA_URL') else 'http://grounding.indra.bio/'
+    if has_config('GILDA_URL') else 'https://grounding.indra.bio/'
 
 
 def get_grounding(
