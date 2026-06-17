@@ -258,7 +258,7 @@ Molecular Systems Biology, e11325.
 For detailed installation instructions,
 [see the documentation](http://indra.readthedocs.io/en/latest/installation.html).
 
-INDRA is tested on Python Python 3.10-3.12. Most usages of INDRA will work with
+INDRA is tested on Python Python 3.8-3.14. Most usages of INDRA will work with
 other Python versions, however, full compatibility is currently only tested
 for these.
 
