@@ -9,7 +9,7 @@ with open(readme_path, 'r', encoding='utf-8') as fh:
 
 
 def main():
-    install_list = ['pysb @ git+https://github.com/pysb/pysb.git; '
+    install_list = ['pysb @ git+https://github.com/pysb/pysb.git ; '
                     'python_version >= "3.10"',
                     'pysb<=1.16.0; python_version < "3.10"',
                     'objectpath',
