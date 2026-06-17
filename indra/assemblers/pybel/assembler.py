@@ -125,7 +125,7 @@ class PybelAssembler(object):
                     'namespace/mesh-processes/mesh-processes-20170725.belns'
         }
         self.model.namespace_url.update(ns_dict)
-        self.model.namespace_pattern['PUBCHEM'] = '\d+'
+        self.model.namespace_pattern['PUBCHEM'] = r'\d+'
         self.annotations_to_include = annotations_to_include
 
     def add_statements(self, stmts_to_add):

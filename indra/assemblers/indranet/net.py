@@ -40,7 +40,7 @@ class IndraNet(nx.MultiDiGraph):
 
     @classmethod
     def from_df(cls, df):
-        """Create an IndraNet MultiDiGraph from a pandas DataFrame.
+        r"""Create an IndraNet MultiDiGraph from a pandas DataFrame.
 
         Returns an instance of IndraNet with graph data filled out from a
         dataframe containing pairwise interactions.

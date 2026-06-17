@@ -966,10 +966,10 @@ def get_mesh_annotations(pmid):
         if available, otherwise None.
     """
     full_xml_tree = get_full_xml(pmid)
-    if not full_xml_tree:
+    if full_xml_tree is None:
         return None
     medline_citation = full_xml_tree.find('PubmedArticle/MedlineCitation')
-    if not medline_citation:
+    if medline_citation is None:
         return None
     annotations = _get_annotations(medline_citation)
     return annotations.get('mesh_annotations')

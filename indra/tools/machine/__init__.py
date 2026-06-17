@@ -1,4 +1,4 @@
-"""
+r"""
 Prerequisites
 -------------
 First, install the machine-specific dependencies:
