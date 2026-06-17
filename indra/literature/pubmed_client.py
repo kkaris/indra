@@ -596,6 +596,34 @@ def _get_journal_info(medline_citation, get_issns_from_nlm: bool):
     }
 
 
+def _parse_date_elem(date_elem, with_time=False):
+    # Parse a date XML element with <Year>, <Month>, <Day> children (and
+    # optionally <Hour>, <Minute>) into a dict of integers.
+    res = {}
+    year = _find_elem_text(date_elem, "Year")
+    if year is not None and year.isdigit():
+        res["year"] = int(year)
+    month = _find_elem_text(date_elem, "Month")
+    if month is not None:
+        # Month may be spelled out as "Jul" or "Aug" etc, or may be zero
+        # padded, e.g. 03 for March. Convert to integer in either case.
+        if month.isdigit():
+            res["month"] = int(month)
+        else:
+            res["month"] = datetime.strptime(month, "%b").month
+    day = _find_elem_text(date_elem, "Day")
+    if day is not None and day.isdigit():
+        res["day"] = int(day)
+    if with_time:
+        hour = _find_elem_text(date_elem, "Hour")
+        if hour is not None and hour.isdigit():
+            res["hour"] = int(hour)
+        minute = _find_elem_text(date_elem, "Minute")
+        if minute is not None and minute.isdigit():
+            res["minute"] = int(minute)
+    return res
+
+
 def _get_article_dates(pubmed_article_data: ET.Element) -> dict:
     # Get the article dates from an XML <PubmedArticle> element
     # In MedlineCitation, get, if available:
@@ -612,68 +640,29 @@ def _get_article_dates(pubmed_article_data: ET.Element) -> dict:
     results = {}
 
     # Get the dates from the MedlineCitation element
-    date_revised = pubmed_article_data.find("./MedlineCitation/DateRevised")
-    date_completed = pubmed_article_data.find("./MedlineCitation/DateCompleted")
-    article_date = pubmed_article_data.find("./MedlineCitation/Article/ArticleDate")
-    journal_pub_date = pubmed_article_data.find("./MedlineCitation/Article/Journal/JournalIssue/PubDate")
-    for date_type, dt in [
-        ("date_completed", date_completed),
-        ("date_revised", date_revised),
-        ("article_date", article_date),
-        ("journal_pub_date", journal_pub_date),
-    ]:
+    mc = "./MedlineCitation"
+    date_paths = [
+        ("date_completed", mc + "/DateCompleted"),
+        ("date_revised", mc + "/DateRevised"),
+        ("article_date", mc + "/Article/ArticleDate"),
+        ("journal_pub_date",
+         mc + "/Article/Journal/JournalIssue/PubDate"),
+    ]
+    for date_type, date_path in date_paths:
+        dt = pubmed_article_data.find(date_path)
         if dt is None:
             continue
-        res = {}
-        year = _find_elem_text(dt, "Year")
-        if year is not None:
-            res["year"] = int(year)
-        month = _find_elem_text(dt, "Month")
-        if month is not None:
-            if isinstance(month, str):
-                # Month may be spelled out as "Jul" or "Aug" etc, or may be zero
-                # padded, e.g. 03 for March. Convert to integer
-                if month.isdigit():
-                    month = int(month)
-                else:
-                    datetime_object = datetime.strptime(month, "%b")
-                    month = datetime_object.month
-            res["month"] = month
-        day = _find_elem_text(dt, "Day")
-        if day is not None:
-            res["day"] = int(day)
-        results[date_type] = res
+        results[date_type] = _parse_date_elem(dt)
 
     # Get dates from History element
-    pubmedpuddates = pubmed_article_data.findall("./PubmedData/History/PubMedPubDate")
+    pubmed_pub_dates = \
+        pubmed_article_data.findall("./PubmedData/History/PubMedPubDate")
     results["pubmed_pubdates"] = {}
-    for pmpd in pubmedpuddates:
+    for pmpd in pubmed_pub_dates:
         pub_status = pmpd.attrib.get("PubStatus", None)
         if pub_status is not None:
-            res = {}
-            year = _find_elem_text(pmpd, "Year")
-            if year is not None:
-                res["year"] = int(year)
-            month = _find_elem_text(pmpd, "Month")
-            if month is not None:
-                if isinstance(month, str):
-                    # Month mya be spelled out as "Jul" or "Aug" etc, or is zero
-                    # padded, e.g. 03 for March. Convert to integer
-                    if month.isdigit():
-                        res["month"] = int(month)
-                    else:
-                        datetime_object = datetime.strptime(month, "%b")
-                        res["month"] = datetime_object.month
-            day = _find_elem_text(pmpd, "Day")
-            if day is not None:
-                res["day"] = int(day)
-            hour = _find_elem_text(pmpd, "Hour")
-            if hour is not None and hour.isdigit():
-                res["hour"] = int(hour)
-            minute = _find_elem_text(pmpd, "Minute")
-            if minute is not None and minute.isdigit():
-                res["minute"] = int(minute)
-            results["pubmed_pubdates"][pub_status] = res
+            results["pubmed_pubdates"][pub_status] = \
+                _parse_date_elem(pmpd, with_time=True)
 
     return results
 
@@ -861,7 +850,8 @@ def get_metadata_from_pubmed_article(
         A dict containing the following fields: 'doi', 'title', 'authors',
         'journal_title', 'journal_abbrev', 'journal_nlm_id', 'issn_list',
         'page', 'volume', 'issue', 'issue_pub_date', 'mesh_annotations',
-        'publication_date', 'abstract', 'publication_types' and 'references'.
+        'publication_date', 'detailed_publication_dates', 'abstract',
+        'publication_types' and 'references'.
     """
     medline_citation = pubmed_article.find('./MedlineCitation')
     pubmed_data = pubmed_article.find('PubmedData')

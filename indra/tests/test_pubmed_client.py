@@ -176,6 +176,7 @@ def test_get_pub_date():
     assert metadata[pmids[2]]['publication_date']['day'] == 27
 
 
+@pytest.mark.webservice
 def test_get_detailed_dates():
     time.sleep(0.5)
     pmid = "23888980"
