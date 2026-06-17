@@ -2,8 +2,9 @@ from __future__ import absolute_import, print_function, unicode_literals
 from builtins import dict, str
 import re
 import logging
-import os.path
+import os
 import requests
+from functools import lru_cache
 from lxml import etree
 from lxml.etree import QName
 import xml.etree.ElementTree as ET
@@ -22,6 +23,8 @@ logger = logging.getLogger(__name__)
 
 pmc_url = 'https://www.ncbi.nlm.nih.gov/pmc/oai/oai.cgi'
 pmid_convert_url = 'https://www.ncbi.nlm.nih.gov/pmc/utils/idconv/v1.0/'
+pmc_s3_base_url = 'https://pmc-oa-opendata.s3.amazonaws.com'
+s3_nsmap = {'s3': 'http://s3.amazonaws.com/doc/2006-03-01/'}
 
 # Paths to resource files
 pmids_fulltext_path = os.path.join(os.path.dirname(__file__),
@@ -35,6 +38,261 @@ pmids_auth_xml_path = os.path.join(os.path.dirname(__file__),
 # Define global dict containing lists of PMIDs among mineable PMCs
 # to be lazily initialized
 pmids_fulltext_dict = {}
+
+
+@lru_cache(maxsize=10000)
+def get_s3_versions(pmcid):
+    """Return available versions of a PMC article on the PMC Cloud S3 bucket.
+
+    Parameters
+    ----------
+    pmcid : str
+        A PubMed Central ID in 'PMC<digits>' form.
+
+    Returns
+    -------
+    tuple of int
+        Sorted tuple of available version numbers, or an empty tuple if the
+        article is not present on the bucket.
+    """
+    params = {'prefix': f'{pmcid}.', 'delimiter': '/'}
+    res = requests.get(pmc_s3_base_url, params=params)
+    res.raise_for_status()
+    tree = ET.fromstring(res.content)
+    versions = []
+    for prefix_el in tree.findall('s3:CommonPrefixes/s3:Prefix', s3_nsmap):
+        m = re.match(rf'{re.escape(pmcid)}\.(\d+)/', prefix_el.text or '')
+        if m:
+            versions.append(int(m.group(1)))
+    return tuple(sorted(versions))
+
+
+def get_latest_s3_version(pmcid):
+    """Return the latest available version of a PMC article on S3.
+
+    Parameters
+    ----------
+    pmcid : str
+        A PubMed Central ID in 'PMC<digits>' form.
+
+    Returns
+    -------
+    Optional[int]
+        The highest available version number, or None if the article is not
+        present on the bucket.
+    """
+    versions = get_s3_versions(pmcid)
+    return max(versions) if versions else None
+
+
+def list_article_files_s3(pmcid, version=None):
+    """List the S3 object keys for a PMC article on the PMC Cloud bucket.
+
+    Parameters
+    ----------
+    pmcid : str
+        A PubMed Central ID in 'PMC<digits>' form.
+    version : Optional[int]
+        The article version to list. If None, the latest available version
+        is used.
+
+    Returns
+    -------
+    list of str
+        List of S3 object keys under the PMC<id>.<version>/ prefix. Empty
+        if the article (or requested version) is not present.
+    """
+    if version is None:
+        version = get_latest_s3_version(pmcid)
+        if version is None:
+            return []
+    prefix = f'{pmcid}.{version}/'
+    keys = []
+    marker = ''
+    while True:
+        params = {'prefix': prefix, 'marker': marker}
+        res = requests.get(pmc_s3_base_url, params=params)
+        res.raise_for_status()
+        tree = ET.fromstring(res.content)
+        for contents in tree.findall('s3:Contents', s3_nsmap):
+            key = contents.findtext('s3:Key', namespaces=s3_nsmap)
+            if key:
+                keys.append(key)
+        truncated = tree.findtext('s3:IsTruncated', namespaces=s3_nsmap)
+        if not truncated == 'true':
+            break
+        marker = keys[-1] if keys else ''
+        if not marker:
+            break
+    return keys
+
+
+def _get_s3_artifact(pmcid, ext, version=None):
+    """Fetch a named artifact for a PMC article from the PMC Cloud S3 bucket.
+
+    The artifact is fetched from the canonical key
+    ``PMC<id>.<version>/PMC<id>.<version>.<ext>``.
+
+    Parameters
+    ----------
+    pmcid : str
+        A PubMed Central ID in 'PMC<digits>' form.
+    ext : str
+        The artifact file extension, e.g. 'xml', 'txt', 'json', or 'pdf'.
+    version : Optional[int]
+        The article version to fetch. If None, the latest available version
+        is resolved via :func:`get_latest_s3_version`.
+
+    Returns
+    -------
+    Optional[requests.Response]
+        The HTTP response if the artifact was fetched successfully, or None
+        if the article is not present on the bucket.
+    """
+    if version is None:
+        version = get_latest_s3_version(pmcid)
+        if version is None:
+            return None
+    url = f'{pmc_s3_base_url}/{pmcid}.{version}/{pmcid}.{version}.{ext}'
+    res = requests.get(url)
+    res.raise_for_status()
+    return res
+
+
+def get_metadata_s3(pmcid, version=None):
+    """Return the JSON metadata for a PMC article from the PMC Cloud bucket.
+
+    Parameters
+    ----------
+    pmcid : str
+        A PubMed Central ID in 'PMC<digits>' form.
+    version : Optional[int]
+        The article version to fetch. If None, the latest available version
+        is used.
+
+    Returns
+    -------
+    Optional[dict]
+        The parsed JSON metadata dict, containing keys such as 'pmid',
+        'doi', 'title', 'citation', 'license_code', 'is_retracted', and
+        s3:// URLs for the text/xml/pdf/media files. None if the article
+        is not present on the bucket.
+    """
+    res = _get_s3_artifact(pmcid, 'json', version=version)
+    return res.json() if res is not None else None
+
+
+def get_xml_s3(pmcid, version=None):
+    """Return the NLM XML for a PMC article from the PMC Cloud S3 bucket.
+
+    Parameters
+    ----------
+    pmcid : str
+        A PubMed Central ID in 'PMC<digits>' form.
+    version : Optional[int]
+        The article version to fetch. If None, the latest available version
+        is used.
+
+    Returns
+    -------
+    Optional[str]
+        The XML content as a unicode string, or None if the article is not
+        present on the bucket.
+    """
+    res = _get_s3_artifact(pmcid, 'xml', version=version)
+    return res.text if res is not None else None
+
+
+def get_text_s3(pmcid, version=None):
+    """Return the plain text for a PMC article from the PMC Cloud S3 bucket.
+
+    Parameters
+    ----------
+    pmcid : str
+        A PubMed Central ID in 'PMC<digits>' form.
+    version : Optional[int]
+        The article version to fetch. If None, the latest available version
+        is used.
+
+    Returns
+    -------
+    Optional[str]
+        The plain-text content as a unicode string, or None if the article
+        is not present on the bucket.
+    """
+    res = _get_s3_artifact(pmcid, 'txt', version=version)
+    return res.text if res is not None else None
+
+
+def get_pdf_s3(pmcid, version=None):
+    """Return the PDF for a PMC article from the PMC Cloud S3 bucket.
+
+    Parameters
+    ----------
+    pmcid : str
+        A PubMed Central ID in 'PMC<digits>' form.
+    version : Optional[int]
+        The article version to fetch. If None, the latest available version
+        is used.
+
+    Returns
+    -------
+    Optional[str]
+        The PDF content or None if the article is not present on the bucket.
+    """
+    res = _get_s3_artifact(pmcid, 'pdf', version=version)
+    return res.content if res is not None else None
+
+
+def download_article_files_s3(pmcid, out_dir, version=None, include=None):
+    """Download a PMC article's files from the PMC Cloud S3 bucket.
+
+    Files are saved under ``<out_dir>/PMC<id>.<version>/<filename>``,
+    mirroring the bucket's prefix layout.
+
+    Parameters
+    ----------
+    pmcid : str
+        A PubMed Central ID in 'PMC<digits>' form.
+    out_dir : str
+        Local directory where files will be written. Created if missing.
+    version : Optional[int]
+        The article version to fetch. If None, the latest available version
+        is used.
+    include : Optional[Iterable[str]]
+        If given, only files whose lowercase extension matches one of these
+        strings are downloaded (e.g. ``['xml', 'txt']``). Extensions should
+        be given without the leading dot. If None, all files in the
+        article's prefix are downloaded.
+
+    Returns
+    -------
+    list of str
+        Paths to the downloaded files. Empty if the article (or requested
+        version) is not present on the bucket.
+    """
+    if version is None:
+        version = get_latest_s3_version(pmcid)
+        if version is None:
+            return []
+    keys = list_article_files_s3(pmcid, version=version)
+    if include is not None:
+        include = {ext.lower().lstrip('.') for ext in include}
+        keys = [k for k in keys if k.rsplit('.', 1)[-1].lower() in include]
+    article_dir = os.path.join(out_dir, f'{pmcid}.{version}')
+    os.makedirs(article_dir, exist_ok=True)
+    paths = []
+    for key in keys:
+        url = f'{pmc_s3_base_url}/{key}'
+        filename = key.rsplit('/', 1)[-1]
+        local_path = os.path.join(article_dir, filename)
+        res = requests.get(url, stream=True)
+        res.raise_for_status()
+        with open(local_path, 'wb') as f:
+            for chunk in res.iter_content(chunk_size=65536):
+                f.write(chunk)
+        paths.append(local_path)
+    return paths
 
 
 def id_lookup(paper_id, idtype=None):

@@ -1,5 +1,8 @@
 import re
 import logging
+
+import tqdm
+
 from indra.databases import uniprot_client
 from indra.statements import Agent, Complex, Evidence
 from indra.ontology.standardize import standardize_agent_name
@@ -29,7 +32,7 @@ class VirhostnetProcessor:
         self.statements = []
 
     def extract_statements(self):
-        for _, row in self.df.iterrows():
+        for _, row in tqdm.tqdm(self.df.iterrows()):
             stmt = process_row(row, up_web_fallback=self.up_web_fallback)
             if stmt:
                 self.statements.append(stmt)
