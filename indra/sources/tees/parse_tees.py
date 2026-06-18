@@ -23,10 +23,6 @@ import codecs
 import networkx.algorithms.dag as dag
 import sys
 
-try:  # Python 2
-    basestring
-except NameError:  # Python 3
-    basestring = str
 
 logger = logging.getLogger(__name__)
 

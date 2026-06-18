@@ -10,12 +10,6 @@ from xml.etree import ElementTree as ET
 from indra import literature as lit
 from indra.literature import elsevier_client, pubmed_client
 from indra.util import UnicodeXMLTreeBuilder as UTB
-# Python 2
-try:
-    basestring
-# Python 3
-except:
-    basestring = str
 
 # Logger
 logger = logging.getLogger(__name__)
@@ -291,7 +285,7 @@ def get_reader_json_str(reader, pmid):
 
 
 def put_reader_output(reader, reader_output, pmid, reader_version, source_text):
-    if not isinstance(reader_version, basestring):
+    if not isinstance(reader_version, str):
         raise ValueError("Reader version must be a string.")
     full_json_gz = gzip_string(json.dumps(reader_output),
                                '%s_output.json' % reader)

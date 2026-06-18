@@ -247,10 +247,6 @@ from .delta import *
 logger = logging.getLogger(__name__)
 
 
-try:  # Python 2
-    basestring
-except NameError:  # Python 3
-    basestring = str
 
 
 class Statement(object):
@@ -578,7 +574,7 @@ class Statement(object):
                     if sub_id:
                         graph.add_edge(node_id, sub_id, label=('%s' % k))
             else:
-                if isinstance(element, basestring) and \
+                if isinstance(element, str) and \
                    element.startswith('http'):
                     element = element.split('/')[-1]
                 graph.add_node(node_id, label=('%s' % str(element)))

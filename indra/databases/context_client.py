@@ -1,11 +1,5 @@
 from copy import copy
 from indra.databases import cbio_client
-# Python 2
-try:
-    basestring
-# Python 3
-except:
-    basestring = str
 
 
 def get_protein_expression(gene_names, cell_types):
