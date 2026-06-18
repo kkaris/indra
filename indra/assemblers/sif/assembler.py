@@ -1,6 +1,4 @@
-from __future__ import absolute_import, print_function, unicode_literals
 import json
-from builtins import dict, str
 import numpy
 import logging
 import itertools

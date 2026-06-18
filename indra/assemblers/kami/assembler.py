@@ -1,5 +1,3 @@
-from __future__ import absolute_import, print_function, unicode_literals
-from builtins import dict, str
 import logging
 import itertools
 from collections import defaultdict
@@ -10,12 +8,6 @@ from indra.assemblers.pysb.assembler import \
         get_binding_site_name, PysbPreassembler, \
         get_agent_rule_str, abbrevs, states, get_mod_site_name
 
-# Python 2
-try:
-    basestring
-# Python 3
-except:
-    basestring = str
 
 logger = logging.getLogger(__name__)
 
@@ -56,7 +48,7 @@ class KamiAssembler(PysbAssembler):
         # the global policies of the Kami assembler
         if policies is not None:
             global_policies = self.policies
-            if isinstance(policies, basestring):
+            if isinstance(policies, str):
                 local_policies = {'other': policies}
             else:
                 local_policies = {'other': 'default'}

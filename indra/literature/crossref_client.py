@@ -1,16 +1,9 @@
-from __future__ import absolute_import, print_function, unicode_literals
-from builtins import dict, str
 import os
 import logging
 import requests
 from indra.config import get_config
 from indra.literature import pubmed_client
-# Python3
-try:
-    from functools import lru_cache
-# Python2
-except ImportError:
-    from functools32 import lru_cache
+from functools import lru_cache
 
 
 logger = logging.getLogger(__name__)

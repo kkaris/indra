@@ -7,10 +7,6 @@ File format specified by:
 http://2011.bionlp-st.org/home/file-formats
 """
 
-from __future__ import absolute_import, print_function, unicode_literals
-from builtins import dict, str
-from future.utils import python_2_unicode_compatible
-
 import gzip
 from lxml import etree
 import tempfile
@@ -27,10 +23,6 @@ import codecs
 import networkx.algorithms.dag as dag
 import sys
 
-try:  # Python 2
-    basestring
-except NameError:  # Python 3
-    basestring = str
 
 logger = logging.getLogger(__name__)
 

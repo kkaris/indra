@@ -1,5 +1,3 @@
-from __future__ import unicode_literals
-
 import copy
 import logging
 from indra.statements.validate import validate_text_refs

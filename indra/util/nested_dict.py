@@ -1,7 +1,3 @@
-from __future__ import absolute_import, print_function, unicode_literals
-from builtins import dict, str
-
-
 class NestedDict(dict):
     """A dict-like object that recursively populates elements of a dict.
 

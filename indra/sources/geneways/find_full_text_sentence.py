@@ -51,11 +51,7 @@ class FullTextMention(object):
     def any_ends_with(self, string_list, pattern):
         """Returns true iff one of the strings in string_list ends in
         pattern."""
-        try:
-            s_base = basestring
-        except:
-            s_base = str
-        is_string = isinstance(pattern, s_base)
+        is_string = isinstance(pattern, str)
 
         if not is_string:
             return False

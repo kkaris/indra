@@ -43,7 +43,6 @@ dependencies = [
     "requests>=2.11",
     "lxml",
     "ipython",
-    "future",
     "networkx>=3",
     "pandas>=2",
     "ndex2",

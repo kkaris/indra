@@ -1,5 +1,3 @@
-from __future__ import absolute_import, print_function, unicode_literals
-from builtins import dict, str
 import pytest
 from indra.literature import pmc_client
 from indra.util import unicode_strs

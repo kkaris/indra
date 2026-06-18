@@ -186,10 +186,6 @@ Some validation tools include:
     including https://www.jsonschemavalidator.net
 """
 
-from __future__ import absolute_import, print_function, unicode_literals
-from builtins import dict, str
-from future.utils import python_2_unicode_compatible
-
 __all__ = [
     # Condition classes
     'BoundCondition', 'MutCondition', 'ModCondition', 'ActivityCondition',
@@ -251,10 +247,6 @@ from .delta import *
 logger = logging.getLogger(__name__)
 
 
-try:  # Python 2
-    basestring
-except NameError:  # Python 3
-    basestring = str
 
 
 class Statement(object):
@@ -582,7 +574,7 @@ class Statement(object):
                     if sub_id:
                         graph.add_edge(node_id, sub_id, label=('%s' % k))
             else:
-                if isinstance(element, basestring) and \
+                if isinstance(element, str) and \
                    element.startswith('http'):
                     element = element.split('/')[-1]
                 graph.add_node(node_id, label=('%s' % str(element)))
@@ -628,7 +620,6 @@ class Statement(object):
         pass
 
 
-@python_2_unicode_compatible
 class Modification(Statement):
     """Generic statement representing the modification of a protein.
 
@@ -795,7 +786,6 @@ class RemoveModification(Modification):
     pass
 
 
-@python_2_unicode_compatible
 class SelfModification(Statement):
     """Generic statement representing the self-modification of a protein.
 
@@ -1037,7 +1027,6 @@ class Demethylation(RemoveModification):
     """Demethylation modification."""
 
 
-@python_2_unicode_compatible
 class RegulateActivity(Statement):
     """Regulation of activity.
 
@@ -1045,10 +1034,8 @@ class RegulateActivity(Statement):
     statements and it should not be instantiated directly.
     """
 
-    # The constructor here is an abstractmethod so that this class cannot
-    # be directly instantiated.
-    __metaclass__ = abc.ABCMeta
-
+    # __init__ is marked abstract to signal this base class is not meant to be
+    # instantiated directly (not enforced at runtime).
     _agent_order = ['subj', 'obj']
 
     @abc.abstractmethod
@@ -1249,7 +1236,6 @@ class GtpActivation(Activation):
     pass
 
 
-@python_2_unicode_compatible
 class ActiveForm(Statement):
     """Specifies conditions causing an Agent to be active or inactive.
 
@@ -1384,7 +1370,6 @@ class ActiveForm(Statement):
         return matches
 
 
-@python_2_unicode_compatible
 class HasActivity(Statement):
     """States that an Agent has or doesn't have a given activity type.
 
@@ -1460,7 +1445,6 @@ class HasActivity(Statement):
         return matches
 
 
-@python_2_unicode_compatible
 class Gef(Statement):
     """Exchange of GTP for GDP on a small GTPase protein mediated by a GEF.
 
@@ -1550,7 +1534,6 @@ class Gef(Statement):
         return stmt
 
 
-@python_2_unicode_compatible
 class Gap(Statement):
     """Acceleration of a GTPase protein's GTP hydrolysis rate by a GAP.
 
@@ -1641,7 +1624,6 @@ class Gap(Statement):
         return stmt
 
 
-@python_2_unicode_compatible
 class Complex(Statement):
     """A set of proteins observed to be in a complex.
 
@@ -1728,7 +1710,6 @@ class Complex(Statement):
         return stmt
 
 
-@python_2_unicode_compatible
 class Translocation(Statement):
     """The translocation of a molecular agent from one location to another.
 
@@ -1819,7 +1800,6 @@ class Translocation(Statement):
         return stmt
 
 
-@python_2_unicode_compatible
 class RegulateAmount(Statement):
     """Superclass handling operations on directed, two-element interactions."""
     _agent_order = ['subj', 'obj']

@@ -1,5 +1,3 @@
-from __future__ import absolute_import, print_function, unicode_literals
-from builtins import dict, str
 import re
 import logging
 import os
@@ -12,12 +10,6 @@ import xml.etree.ElementTree as ET
 from indra.literature import pubmed_client
 from indra.util import UnicodeXMLTreeBuilder as UTB
 
-# Python 2
-try:
-    basestring
-# Python 3
-except:
-    basestring = str
 
 logger = logging.getLogger(__name__)
 

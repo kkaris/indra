@@ -1,6 +1,3 @@
-from __future__ import absolute_import, print_function, unicode_literals
-from builtins import dict, str
-
 __all__ = ['get_drug_target_data', 'LincsClient', 'load_lincs_csv']
 
 import os
