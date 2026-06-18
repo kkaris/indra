@@ -42,9 +42,7 @@ RUN git clone https://github.com/gyorilab/indra.git && \
     mkdir /root/.config/indra && \
     echo "[indra]" > /root/.config/indra/config.ini && \
     # Install Python dependencies
-    pip install --upgrade pip && \
-    # Install cython first for pyjnius
-    pip install "cython<3.0" "setuptools" "setuptools_scm" "wheel" && \
+    pip install --upgrade pip setuptools wheel && \
     pip install -e .[all] && \
     pip uninstall -y enum34 && \
     # Pre-build the bio ontology

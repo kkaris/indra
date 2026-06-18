@@ -141,18 +141,20 @@ New dependencies
 When adding new functionalities, using built-in Python libraries or
 packages that are already standard dependencies of INDRA are preferred.
 In case a new dependency needs to be used, that dependency needs to be
-- added to the install list or one of the extras list in setup.py
+- added to the `dependencies` list or one of the optional-dependencies
+(extras) lists in pyproject.toml
 - added to the installation instructions in the documentation if any special
 instructions are needed for setup
 - either added to doc/conf.py as an installed dependency or mocked to make doc
 builds on readthedocs.io pass
 - added to `.github/workflows/tests.yml` unless installed via
-setup.py
+pyproject.toml
 
 New modules
 -----------
 If a new submodule is added, that submodule needs to be
-- listed in setup.py under packages to make sure it is included in installs
+- a proper package (i.e. contain an `__init__.py` file) so that it is picked up
+by setuptools' automatic package discovery and included in installs
 - referred to in the documentation explicitly to be included
 
 New knowledge sources
