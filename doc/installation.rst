@@ -55,7 +55,7 @@ as a system-wide package.
 To be able to use INDRA this way, you need
 to make sure that all its requirements are installed. To be able to
 `import indra`, you also need the folder to be visible on your
-`PYTHONPATH <https://docs.python.org/2/using/cmdline.html#envvar-PYTHONPATH>`_
+`PYTHONPATH <https://docs.python.org/3/using/cmdline.html#envvar-PYTHONPATH>`_
 environmental variable.
 
 Installing releases with pip

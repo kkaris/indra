@@ -311,7 +311,7 @@ MOCK_MODULES = [
     'pybel.io', 'pybel.io.sbel',
     'pygraphviz', 'jnius', 'jnius_config', 'flask',
     'objectpath', 'lxml', 'lxml.etree', 'lxml.builder',
-    'functools32', 'ndex2', 'ndex2.client', 'ndex2.nice_cx_network',
+    'ndex2', 'ndex2.client', 'ndex2.nice_cx_network',
     'nltk', 'nltk.stem', 'nltk.stem.snowball', 'kappy', 'openpyxl',
     'reportlab', 'reportlab.lib', 'reportlab.lib.enums',
     'reportlab.lib.pagesizes', 'reportlab.platypus', 'reportlab.lib.styles',

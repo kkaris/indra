@@ -5,7 +5,6 @@ sphinx_autodoc_typehints
 mock
 ipython
 matplotlib
-future
 requests
 pysb
 pandas
