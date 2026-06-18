@@ -59,9 +59,6 @@ dependencies = [
 [project.urls]
 Homepage = "http://github.com/gyorilab/indra"
 
-[project.scripts]
-indra-machine = "indra.tools.machine.cli:main"
-
 [project.optional-dependencies]
 # Inputs and outputs
 trips_offline = ["pykqml"]
@@ -101,8 +98,6 @@ tests = [
     "pytest-cov",
     "pynose",  # This is needed for PySB with_model in some tests
 ]
-# Convenience target installing every optional dependency above. Expressed as a
-# recursive self-reference so the set stays in sync with the individual extras.
 all = [
     "indra[trips_offline,reach_offline,eidos_offline,hypothesis,geneways,bel,tkg,sbml,machine,explanation,grounding,aws,graph,plot,isi,api,sklearn_belief,owl,tests]",
 ]
@@ -111,8 +106,6 @@ all = [
 include-package-data = true
 
 [tool.setuptools.packages.find]
-# Auto-discover all indra packages. Note: build releases from a clean tree
-# (sdist / git export) so untracked stray package dirs are not swept in.
 include = ["indra*"]
 
 [tool.setuptools.dynamic]
