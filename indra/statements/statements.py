@@ -1034,10 +1034,8 @@ class RegulateActivity(Statement):
     statements and it should not be instantiated directly.
     """
 
-    # The constructor here is an abstractmethod so that this class cannot
-    # be directly instantiated.
-    __metaclass__ = abc.ABCMeta
-
+    # __init__ is marked abstract to signal this base class is not meant to be
+    # instantiated directly (not enforced at runtime).
     _agent_order = ['subj', 'obj']
 
     @abc.abstractmethod

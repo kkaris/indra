@@ -61,9 +61,6 @@ class BioContext(Context):
         return any([getattr(self, attr, None) is not None
                     for attr in self.attrs])
 
-    def __nonzero__(self):
-        return self.__bool__()
-
     @classmethod
     def from_json(cls, jd):
         # For all the attributes, we deserialize them if they have a value,
@@ -114,9 +111,6 @@ class WorldContext(Context):
 
     def __bool__(self):
         return self.time is not None or self.geo_location is not None
-
-    def __nonzero__(self):
-        return self.__bool__()
 
     @classmethod
     def from_json(cls, jd):
@@ -317,9 +311,6 @@ class MovementContext(Context):
 
     def __bool__(self):
         return self.locations is not None or self.time is not None
-
-    def __nonzero__(self):
-        return self.__bool__()
 
     @classmethod
     def from_json(cls, jd):
