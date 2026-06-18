@@ -7,7 +7,6 @@ File format specified by:
 http://2011.bionlp-st.org/home/file-formats
 """
 
-from __future__ import absolute_import, print_function, unicode_literals
 from builtins import dict, str
 from future.utils import python_2_unicode_compatible
 

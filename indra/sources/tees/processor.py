@@ -10,7 +10,6 @@ Extraction for Post-Translational Modifications, Epigenetics and Protein
 Structural Relations. Proceedings of BioNLP 2012, pages 82-90, 2012.
 """
 
-from __future__ import absolute_import, print_function, unicode_literals
 from builtins import dict, str
 from future.utils import python_2_unicode_compatible
 
