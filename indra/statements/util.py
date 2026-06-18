@@ -1,6 +1,3 @@
-from future.utils import python_2_unicode_compatible
-
-
 __all__ = ['make_hash']
 
 

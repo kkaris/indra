@@ -1,4 +1,3 @@
-from future.utils import python_2_unicode_compatible
 from copy import copy
 
 
@@ -13,7 +12,6 @@ from .util import *
 from .context import Context
 
 
-@python_2_unicode_compatible
 class Evidence(object):
     """Container for evidence supporting a given statement.
 

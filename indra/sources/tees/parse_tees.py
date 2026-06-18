@@ -7,8 +7,6 @@ File format specified by:
 http://2011.bionlp-st.org/home/file-formats
 """
 
-from future.utils import python_2_unicode_compatible
-
 import gzip
 from lxml import etree
 import tempfile

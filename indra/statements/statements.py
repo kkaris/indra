@@ -186,8 +186,6 @@ Some validation tools include:
     including https://www.jsonschemavalidator.net
 """
 
-from future.utils import python_2_unicode_compatible
-
 __all__ = [
     # Condition classes
     'BoundCondition', 'MutCondition', 'ModCondition', 'ActivityCondition',
@@ -626,7 +624,6 @@ class Statement(object):
         pass
 
 
-@python_2_unicode_compatible
 class Modification(Statement):
     """Generic statement representing the modification of a protein.
 
@@ -793,7 +790,6 @@ class RemoveModification(Modification):
     pass
 
 
-@python_2_unicode_compatible
 class SelfModification(Statement):
     """Generic statement representing the self-modification of a protein.
 
@@ -1035,7 +1031,6 @@ class Demethylation(RemoveModification):
     """Demethylation modification."""
 
 
-@python_2_unicode_compatible
 class RegulateActivity(Statement):
     """Regulation of activity.
 
@@ -1247,7 +1242,6 @@ class GtpActivation(Activation):
     pass
 
 
-@python_2_unicode_compatible
 class ActiveForm(Statement):
     """Specifies conditions causing an Agent to be active or inactive.
 
@@ -1382,7 +1376,6 @@ class ActiveForm(Statement):
         return matches
 
 
-@python_2_unicode_compatible
 class HasActivity(Statement):
     """States that an Agent has or doesn't have a given activity type.
 
@@ -1458,7 +1451,6 @@ class HasActivity(Statement):
         return matches
 
 
-@python_2_unicode_compatible
 class Gef(Statement):
     """Exchange of GTP for GDP on a small GTPase protein mediated by a GEF.
 
@@ -1548,7 +1540,6 @@ class Gef(Statement):
         return stmt
 
 
-@python_2_unicode_compatible
 class Gap(Statement):
     """Acceleration of a GTPase protein's GTP hydrolysis rate by a GAP.
 
@@ -1639,7 +1630,6 @@ class Gap(Statement):
         return stmt
 
 
-@python_2_unicode_compatible
 class Complex(Statement):
     """A set of proteins observed to be in a complex.
 
@@ -1726,7 +1716,6 @@ class Complex(Statement):
         return stmt
 
 
-@python_2_unicode_compatible
 class Translocation(Statement):
     """The translocation of a molecular agent from one location to another.
 
@@ -1817,7 +1806,6 @@ class Translocation(Statement):
         return stmt
 
 
-@python_2_unicode_compatible
 class RegulateAmount(Statement):
     """Superclass handling operations on directed, two-element interactions."""
     _agent_order = ['subj', 'obj']
