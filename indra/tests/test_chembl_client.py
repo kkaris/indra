@@ -1,4 +1,3 @@
-from builtins import dict, str
 from indra.statements import Agent
 from indra.databases import chembl_client
 from indra.util import unicode_strs

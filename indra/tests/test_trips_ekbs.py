@@ -1,4 +1,3 @@
-from builtins import dict, str
 import re
 import os
 from indra.statements import *

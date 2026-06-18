@@ -1,4 +1,3 @@
-from builtins import dict, str
 import copy
 import logging
 import lxml.etree

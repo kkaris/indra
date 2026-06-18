@@ -1,4 +1,3 @@
-from builtins import dict, str
 import os
 from indra.sources.ndex_cx import process_cx_file, process_ndex_network
 from indra.sources.ndex_cx.processor import NdexCxProcessor

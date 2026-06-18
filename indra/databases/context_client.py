@@ -1,4 +1,3 @@
-from builtins import dict, str
 from copy import copy
 from indra.databases import cbio_client
 # Python 2

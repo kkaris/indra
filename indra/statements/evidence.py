@@ -1,4 +1,3 @@
-from builtins import dict, str
 from future.utils import python_2_unicode_compatible
 from copy import copy
 

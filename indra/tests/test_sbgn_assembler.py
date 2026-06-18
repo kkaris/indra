@@ -1,4 +1,3 @@
-from builtins import dict, str
 import requests
 from lxml import etree
 from indra.statements import *

@@ -186,7 +186,6 @@ Some validation tools include:
     including https://www.jsonschemavalidator.net
 """
 
-from builtins import dict, str
 from future.utils import python_2_unicode_compatible
 
 __all__ = [

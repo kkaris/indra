@@ -1,4 +1,3 @@
-from builtins import dict, str
 import requests
 import logging
 import xml.etree.ElementTree as ET

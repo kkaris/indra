@@ -1,4 +1,3 @@
-from builtins import dict, str
 import logging
 import indra.statements as ist
 

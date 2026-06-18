@@ -1,4 +1,3 @@
-from builtins import dict, str
 from indra.databases import ndex_client
 
 

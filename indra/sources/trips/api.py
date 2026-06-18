@@ -1,4 +1,3 @@
-from builtins import dict, str
 import logging
 from .processor import TripsProcessor
 from indra.sources.trips import client

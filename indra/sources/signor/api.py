@@ -1,4 +1,3 @@
-from builtins import dict, str
 import sys
 import logging
 import requests

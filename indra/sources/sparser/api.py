@@ -2,7 +2,6 @@
 reading system.
 """
 
-from builtins import dict, str
 from indra import get_config
 
 __all__ = ['process_text', 'process_nxml_str', 'process_nxml_file',

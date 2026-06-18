@@ -1,4 +1,3 @@
-from builtins import dict, str
 import logging
 from copy import copy
 from indra.databases import get_identifiers_url

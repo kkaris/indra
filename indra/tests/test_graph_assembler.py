@@ -1,4 +1,3 @@
-from builtins import dict, str
 from indra.statements import *
 from indra.assemblers.graph import GraphAssembler
 

@@ -1,4 +1,3 @@
-from builtins import dict, str
 from indra.databases import hgnc_client
 from indra.util import unicode_strs
 import pytest

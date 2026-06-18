@@ -1,5 +1,3 @@
-from builtins import dict, str
-
 __all__ = ['get_drug_target_data', 'LincsClient', 'load_lincs_csv']
 
 import os

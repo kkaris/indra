@@ -10,7 +10,6 @@ Extraction for Post-Translational Modifications, Epigenetics and Protein
 Structural Relations. Proceedings of BioNLP 2012, pages 82-90, 2012.
 """
 
-from builtins import dict, str
 import os
 from indra.sources.tees.processor import TEESProcessor
 from indra import get_config

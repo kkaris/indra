@@ -10,7 +10,6 @@ analyzing, visualizing, and integrating molecular pathway data."
 Journal of biomedical informatics 37, no. 1 (2004): 43-53.
 """
 
-from builtins import dict, str
 import os
 from indra.sources.geneways.processor import GenewaysProcessor
 

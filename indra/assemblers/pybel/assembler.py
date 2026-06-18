@@ -1,4 +1,3 @@
-from builtins import dict, str
 import uuid
 import logging
 from typing import Mapping

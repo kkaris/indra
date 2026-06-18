@@ -1,5 +1,3 @@
-from builtins import dict, str
-
 import logging
 import argparse
 import pickle

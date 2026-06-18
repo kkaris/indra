@@ -1,5 +1,3 @@
-from builtins import dict, str
-
 import json
 from os import path
 from indra.assemblers.pysb.kappa_util import im_json_to_graph, cm_json_to_graph

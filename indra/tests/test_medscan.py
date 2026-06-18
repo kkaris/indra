@@ -1,4 +1,3 @@
-from builtins import dict, str
 from os.path import join, dirname
 
 from indra.statements import *

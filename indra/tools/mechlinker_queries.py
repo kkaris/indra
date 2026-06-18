@@ -1,4 +1,3 @@
-from builtins import dict, str
 from indra.tools.incremental_model import IncrementalModel
 from indra.mechlinker import MechLinker
 from indra.assemblers.english import EnglishAssembler

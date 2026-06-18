@@ -1,4 +1,3 @@
-from builtins import dict, str
 from indra.literature import s3_client
 from indra.util import unicode_strs
 import zlib

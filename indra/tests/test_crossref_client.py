@@ -1,4 +1,3 @@
-from builtins import dict, str
 from indra.literature import crossref_client
 from indra.util import unicode_strs
 import pytest

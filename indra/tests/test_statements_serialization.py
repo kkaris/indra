@@ -1,4 +1,3 @@
-from builtins import dict, str
 import json
 import datetime
 import jsonschema

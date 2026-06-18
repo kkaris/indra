@@ -1,5 +1,3 @@
-from builtins import dict, str
-
 import logging
 from indra.databases import uniprot_client, hgnc_client
 from indra.statements import *

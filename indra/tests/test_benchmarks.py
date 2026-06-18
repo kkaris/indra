@@ -1,4 +1,3 @@
-from builtins import dict, str
 from os.path import dirname, abspath, join
 from indra.benchmarks import bioprocesses as bp
 # from indra.benchmarks import complexes as cp

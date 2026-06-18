@@ -1,4 +1,3 @@
-from builtins import dict, str
 import os
 from pysb import *
 import pysb.export

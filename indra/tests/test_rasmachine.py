@@ -1,4 +1,3 @@
-from builtins import dict, str
 from indra.tools.machine.machine import make_status_message
 
 stats = {}

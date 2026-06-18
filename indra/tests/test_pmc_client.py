@@ -1,4 +1,3 @@
-from builtins import dict, str
 import pytest
 from indra.literature import pmc_client
 from indra.util import unicode_strs

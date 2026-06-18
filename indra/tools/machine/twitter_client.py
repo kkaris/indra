@@ -1,4 +1,3 @@
-from builtins import dict, str
 import tweepy
 
 def get_oauth_file(auth_file):

@@ -1,4 +1,3 @@
-from builtins import dict, str
 import json
 from networkx import MultiDiGraph, Graph, cycle_basis
 from pygraphviz import AGraph

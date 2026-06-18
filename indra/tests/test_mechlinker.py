@@ -1,4 +1,3 @@
-from builtins import dict, str
 import networkx
 from indra.statements import *
 from indra.mechlinker import MechLinker, AgentState

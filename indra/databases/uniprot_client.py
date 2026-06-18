@@ -1,4 +1,3 @@
-from builtins import dict, str
 import os
 import logging
 from indra.util import read_unicode_csv
