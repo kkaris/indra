@@ -5,7 +5,7 @@ Installing Python
 -----------------
 INDRA is a Python package so the basic requirement for using it is to have
 Python installed. Python is shipped with most Linux distributions and with
-OSX. INDRA works with Python 3.6 or higher.
+OSX. INDRA works with Python 3.8 or higher.
 
 On Mac, the preferred way to install Python (over the built-in version) is
 using `Homebrew <http://brew.sh/>`_.
@@ -109,14 +109,13 @@ configuration steps needed that are not described here.
 
     export JAVA_HOME=/Library/Java/JavaVirtualMachines/jdk-11.0.2.jdk/Contents/Home
 
-3. Then first install cython followed by pyjnius (tested with version 1.1.4).
-   These need to be broken up into two sequential calls to pip
-   install.
+3. Install pyjnius (version 1.6.1 or higher). Recent versions install from
+   prebuilt wheels or build cleanly under current Cython, so the separate
+   Cython install previously required is no longer needed.
 
 .. code-block:: bash
 
-    pip install cython
-    pip install pyjnius==1.1.4
+    pip install "pyjnius>=1.6.1"
 
 On Mac, you may need to 
 `install Legacy Java for OSX <http://support.apple.com/kb/DL1572>`_.
@@ -175,12 +174,6 @@ installed as
     pip install indra[extra_list]
 
 You can also install all extra dependencies by doing
-
-.. code-block:: bash
-
-   pip install indra --install-option="complete"
-
-or 
 
 .. code-block:: bash
 
