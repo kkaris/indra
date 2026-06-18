@@ -156,10 +156,13 @@ one has to
 .. code-block:: bash
 
     brew install graphviz
-    pip install pygraphviz --install-option="--include-path=/usr/local/include/graphviz/" --install-option="--library-path=/usr/local/lib/graphviz"
+    pip install --config-settings="--global-option=build_ext" \
+                --config-settings="--global-option=-I$(brew --prefix graphviz)/include/" \
+                --config-settings="--global-option=-L$(brew --prefix graphviz)/lib/" \
+                pygraphviz
 
-where the --include-path and --library-path needs to be set based on
-where Homebrew installed graphviz.
+where ``brew --prefix graphviz`` resolves the graphviz install location on both
+Intel and Apple Silicon Macs.
 
 Optional additional dependencies
 ````````````````````````````````
@@ -192,36 +195,45 @@ of dependencies.
 +-----------------+------------------------------------------------------+
 |Extra list name  |Purpose                                               |
 +=================+======================================================+
+| bel             | BEL input processing and output assembly             |
 +-----------------+------------------------------------------------------+
-|bel              |BEL input processing and output assembly              |
+| trips_offline   | Offline reading with local instance of TRIPS system  |
 +-----------------+------------------------------------------------------+
-|trips_offline    |Offline reading with local instance of TRIPS system   |
+| reach_offline   | Offline reading with local instance of REACH system  |
 +-----------------+------------------------------------------------------+
-|reach_offline    |Offline reading with local instance of REACH system   |
+| eidos_offline   | Offline reading with local instance of Eidos system  |
 +-----------------+------------------------------------------------------+
-|eidos_offline    |Offline reading with local instance of Eidos system   |
+| tkg             | Reading with textToKnowledgeGraph                    |
 +-----------------+------------------------------------------------------+
-|tkg              |Reading with textToKnowledgeGraph                     |
+| geneways        | Geneways reader input processing                     |
 +-----------------+------------------------------------------------------+
-|geneways         |Genewayas reader input processing                     |
+| hypothesis      | Processing hypothes.is annotations                   |
 +-----------------+------------------------------------------------------+
-|sofia            |SOFIA reader input processing                         |
+| isi             | ISI reader input processing                          |
 +-----------------+------------------------------------------------------+
-|bbn              |BBN reader input processing                           |
+| sbml            | SBML model export through the PySB Assembler         |
 +-----------------+------------------------------------------------------+
-|sbml             |SBML model export through the PySB Assembler          |
+| grounding       | Packages for re-grounding and disambiguating entities|
 +-----------------+------------------------------------------------------+
-|grounding        |Packages for re-grounding and disambiguating entities |
+| sklearn_belief  | Belief scoring with scikit-learn models              |
 +-----------------+------------------------------------------------------+
-|machine          |Running a local instance of a "RAS machine"           |
+| machine         | Running a local instance of a "RAS machine"          |
 +-----------------+------------------------------------------------------+
-|explanation      |Finding explanatory paths in rule-based models        |
+| explanation     | Finding explanatory paths in rule-based models       |
 +-----------------+------------------------------------------------------+
-|aws              |Accessing AWS compute and storage resources           |
+| owl             | Processing OWL ontologies                            |
 +-----------------+------------------------------------------------------+
-|graph            |Assembling into a visualizing Graphviz graphs         |
+| api             | Running the INDRA REST API service                   |
 +-----------------+------------------------------------------------------+
-|plot             |Create and display plots                              |
+| aws             | Accessing AWS compute and storage resources          |
++-----------------+------------------------------------------------------+
+| graph           | Assembling and visualizing Graphviz graphs           |
++-----------------+------------------------------------------------------+
+| plot            | Creating and displaying plots                        |
++-----------------+------------------------------------------------------+
+| tests           | Running the INDRA test suite                         |
++-----------------+------------------------------------------------------+
+| all             | All of the optional dependencies listed above        |
 +-----------------+------------------------------------------------------+
 
 Configuring INDRA
