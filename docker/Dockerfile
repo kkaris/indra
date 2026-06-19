@@ -84,5 +84,4 @@ COPY reach-1.6.3-e48717.jar $REACHPATH
 # MTI
 COPY mti_jars.zip $DIRPATH
 RUN mkdir -p $DIRPATH/mti_jars && \
-    unzip $DIRPATH/mti_jars.zip -d $DIRPATH/mti_jars/ && \
-    rm $DIRPATH/mti_jars.zip
+    unzip $DIRPATH/mti_jars.zip -d $DIRPATH/mti_jars/
