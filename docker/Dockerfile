@@ -30,6 +30,7 @@ ENV JAVA_HOME=/usr/lib/jvm/java-8-openjdk-amd64
 ENV VENV_PATH=$DIRPATH/venv
 RUN python3 -m venv $VENV_PATH
 ENV PATH="$VENV_PATH/bin:$PATH"
+ENV PIP_NO_CACHE_DIR=1
 
 # Install INDRA and dependencies
 RUN git clone https://github.com/gyorilab/indra.git && \
@@ -82,5 +83,6 @@ COPY reach-1.6.3-e48717.jar $REACHPATH
 
 # MTI
 COPY mti_jars.zip $DIRPATH
-RUN mkdir $DIRPATH/mti_jars && \
-    unzip $DIRPATH/mti_jars.zip -d $DIRPATH/mti_jars/
+RUN mkdir -p $DIRPATH/mti_jars && \
+    unzip $DIRPATH/mti_jars.zip -d $DIRPATH/mti_jars/ && \
+    rm $DIRPATH/mti_jars.zip
