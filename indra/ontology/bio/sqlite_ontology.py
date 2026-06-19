@@ -3,6 +3,7 @@ INDRA BioOntology."""
 
 import os
 import json
+import zlib
 import sqlite3
 import logging
 import threading
@@ -15,6 +16,14 @@ logger = logging.getLogger(__name__)
 
 
 DEFAULT_SQLITE_ONTOLOGY = os.path.join(CACHE_DIR, 'bio_ontology.db')
+
+
+def _zip(text):
+    return zlib.compress(text.encode('utf-8'))
+
+
+def _unzip(blob):
+    return zlib.decompress(blob).decode('utf-8')
 
 
 class SqliteOntology(IndraOntology):
@@ -53,7 +62,7 @@ class SqliteOntology(IndraOntology):
         res = self.cur.fetchone()
         if res is None:
             return False
-        return '%s:%s|isa_or_partof' % (ns2, id2) in res[0].split(',')
+        return '%s:%s|isa_or_partof' % (ns2, id2) in _unzip(res[0]).split(',')
 
     def child_rel(self, ns, id, rel_types):
         q = """SELECT children FROM child_lookup
@@ -66,7 +75,7 @@ class SqliteOntology(IndraOntology):
         if res is None:
             yield from []
         else:
-            children = res[0].split(',')
+            children = _unzip(res[0]).split(',')
             for child in children:
                 curie, rel_type = child.split('|', 1)
                 if rel_type in rel_types:
@@ -97,7 +106,7 @@ class SqliteOntology(IndraOntology):
         if res is None:
             yield from []
         else:
-            parents = res[0].split(',')
+            parents = _unzip(res[0]).split(',')
             for parent in parents:
                 curie, rel_type = parent.split('|', 1)
                 if rel_type in rel_types:
@@ -114,8 +123,27 @@ class SqliteOntology(IndraOntology):
         props = json.loads(res[0])
         return props.get(property)
 
+    def get_name(self, ns, id):
+        q = """SELECT name FROM node_properties
+               WHERE id=? AND ns=?
+               LIMIT 1;"""
+        self.cur.execute(q, (id, ns))
+        res = self.cur.fetchone()
+        return res[0] if res is not None else None
+
     def get_id_from_name(self, ns, name):
+        q = """SELECT id, properties FROM node_properties
+               WHERE ns=? AND name=?;"""
+        self.cur.execute(q, (ns, name))
+        for node_id, props in self.cur.fetchall():
+            if not json.loads(props).get('obsolete', False):
+                return (ns, node_id)
         return None
+
+    def nodes_from_suffix(self, suffix):
+        self.cur.execute("SELECT ns, id FROM node_properties;")
+        return [self.label(ns, id) for ns, id in self.cur.fetchall()
+                if self.label(ns, id).endswith(suffix)]
 
 
 def build_sqlite_ontology(db_path=DEFAULT_SQLITE_ONTOLOGY, force=False):
@@ -176,25 +204,25 @@ def build_sqlite_ontology(db_path=DEFAULT_SQLITE_ONTOLOGY, force=False):
     q = """CREATE TABLE child_lookup (
         parent_id TEXT NOT NULL,
         parent_ns TEXT NOT NULL,
-        children TEXT NOT NULL,
-        UNIQUE (parent_id, parent_ns)
-    );"""
+        children BLOB NOT NULL,
+        PRIMARY KEY (parent_id, parent_ns)
+    ) WITHOUT ROWID;"""
     cur.execute(q)
     q = """CREATE TABLE parent_lookup (
         child_id TEXT NOT NULL,
         child_ns TEXT NOT NULL,
-        parents TEXT NOT NULL,
-        UNIQUE (child_id, child_ns)
-    );"""
+        parents BLOB NOT NULL,
+        PRIMARY KEY (child_id, child_ns)
+    ) WITHOUT ROWID;"""
     cur.execute(q)
     for (pid, pns), children in all_children.items():
         cur.execute("INSERT INTO child_lookup (parent_id, parent_ns, children) "
                     "VALUES (?, ?, ?);",
-                    (pid, pns, ','.join(children)))
+                    (pid, pns, _zip(','.join(children))))
     for (cid, cns), parents in all_parents.items():
         cur.execute("INSERT INTO parent_lookup (child_id, child_ns, parents) "
                     "VALUES (?, ?, ?);",
-                    (cid, cns, ','.join(parents)))
+                    (cid, cns, _zip(','.join(parents))))
 
     # Create node property table
     # Here we just keep track of the namespace and ID,
@@ -202,16 +230,22 @@ def build_sqlite_ontology(db_path=DEFAULT_SQLITE_ONTOLOGY, force=False):
     q = """CREATE TABLE node_properties (
         id TEXT NOT NULL,
         ns TEXT NOT NULL,
+        name TEXT,
         properties TEXT NOT NULL,
-        UNIQUE (id, ns)
-    );"""
+        PRIMARY KEY (id, ns)
+    ) WITHOUT ROWID;"""
     cur.execute(q)
 
     for node in bio_ontology.nodes:
         ns, id = bio_ontology.get_ns_id(node)
-        props = json.dumps(bio_ontology.nodes[node])
-        cur.execute("INSERT INTO node_properties (id, ns, properties) "
-                    "VALUES (?, ?, ?);", (id, ns, props))
+        data = bio_ontology.nodes[node]
+        name = data.get('name')
+        props = {k: v for k, v in data.items() if k != 'name'}
+        cur.execute("INSERT INTO node_properties (id, ns, name, properties) "
+                    "VALUES (?, ?, ?, ?);", (id, ns, name, json.dumps(props)))
+
+    cur.execute("CREATE INDEX idx_node_name ON node_properties (ns, name) "
+                "WHERE name IS NOT NULL;")
 
     conn.commit()
     conn.execute("VACUUM")
