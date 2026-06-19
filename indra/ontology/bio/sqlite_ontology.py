@@ -44,11 +44,16 @@ class SqliteOntology(IndraOntology):
         pass
 
     def isa_or_partof(self, ns1, id1, ns2, id2):
-        q = """SELECT 1 FROM relationships
-               WHERE child_id=? AND child_ns=? AND parent_id=? AND parent_ns=?
+        # Ontological parents (isa/partof ancestors) of a node are stored in
+        # child_lookup, keyed by that node (see get_parents/child_rel).
+        q = """SELECT children FROM child_lookup
+               WHERE parent_id=? AND parent_ns=?
                LIMIT 1;"""
-        self.cur.execute(q, (id1, ns1, id2, ns2))
-        return self.cur.fetchone() is not None
+        self.cur.execute(q, (id1, ns1))
+        res = self.cur.fetchone()
+        if res is None:
+            return False
+        return '%s:%s|isa_or_partof' % (ns2, id2) in res[0].split(',')
 
     def child_rel(self, ns, id, rel_types):
         q = """SELECT children FROM child_lookup
@@ -135,19 +140,7 @@ def build_sqlite_ontology(db_path=DEFAULT_SQLITE_ONTOLOGY, force=False):
     cur = conn.cursor()
 
     logger.info('Building SQLite ontology at %s' % db_path)
-    # First, we create the relationships table and populate
-    # it with child/parent pairs
-    q = """CREATE TABLE relationships (
-        child_id TEXT NOT NULL,
-        child_ns TEXT NOT NULL,
-        parent_id TEXT NOT NULL,
-        parent_ns TEXT NOT NULL,
-        rel_type TEXT NOT NULL,
-        UNIQUE (child_id, child_ns, parent_id, parent_ns)
-    );"""
-    cur.execute(q)
-
-    # Insert into the database in chunks
+    # Build the child/parent lookup contents in chunks
     chunk_size = 10000
     # Note: the transitive closure consists of pairs with the first element
     # being the ontological child and the second the parent. However,
@@ -167,10 +160,6 @@ def build_sqlite_ontology(db_path=DEFAULT_SQLITE_ONTOLOGY, force=False):
                 '%s:%s|%s' % (cns, cid, 'isa_or_partof'))
             all_parents[(cid, cns)].add(
                 '%s:%s|%s' % (pns, pid, 'isa_or_partof'))
-        cur.executemany("""INSERT INTO relationships (parent_id, 
-                            parent_ns, child_id, child_ns, rel_type)
-                            VALUES (?, ?, ?, ?, 'isa_or_partof');""",
-                        chunk_values)
 
     for parent, child, data in bio_ontology.edges(data=True):
         parent_ns, parent_id = bio_ontology.get_ns_id(parent)
@@ -182,14 +171,6 @@ def build_sqlite_ontology(db_path=DEFAULT_SQLITE_ONTOLOGY, force=False):
             '%s:%s|%s' % (child_ns, child_id, rel_type))
         all_parents[(child_id, child_ns)].add(
             '%s:%s|%s' % (parent_ns, parent_id, rel_type))
-        cur.execute("""INSERT INTO relationships (parent_id,
-                        parent_ns, child_id, child_ns, rel_type)
-                        VALUES (?, ?, ?, ?, ?);""",
-                    (parent_id, parent_ns, child_id, child_ns, rel_type))
-
-    q = """CREATE INDEX idx_child_parent ON relationships 
-        (child_id, child_ns, parent_id, parent_ns);"""
-    cur.execute(q)
 
     # Next, create child and parent lookup tables and populate them
     q = """CREATE TABLE child_lookup (
@@ -214,13 +195,6 @@ def build_sqlite_ontology(db_path=DEFAULT_SQLITE_ONTOLOGY, force=False):
         cur.execute("INSERT INTO parent_lookup (child_id, child_ns, parents) "
                     "VALUES (?, ?, ?);",
                     (cid, cns, ','.join(parents)))
-    # Now add indices to the lookup tables
-    q = """CREATE INDEX idx_child_lookup ON child_lookup 
-        (parent_id, parent_ns);"""
-    cur.execute(q)
-    q = """CREATE INDEX idx_parent_lookup ON parent_lookup 
-        (child_id, child_ns);"""
-    cur.execute(q)
 
     # Create node property table
     # Here we just keep track of the namespace and ID,
@@ -240,5 +214,6 @@ def build_sqlite_ontology(db_path=DEFAULT_SQLITE_ONTOLOGY, force=False):
                     "VALUES (?, ?, ?);", (id, ns, props))
 
     conn.commit()
+    conn.execute("VACUUM")
     conn.close()
     logger.info('Finished building SQLite ontology')
