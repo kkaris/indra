@@ -10,7 +10,6 @@ WORKDIR $DIRPATH
 RUN apt-get update && \
     # Install Java
     apt-get install -y openjdk-8-jdk && \
-    # jnius-indra requires cython which requires gcc
     apt-get install -y git wget zip unzip bzip2 gcc graphviz graphviz-dev \
         pkg-config python3 python3-pip python3.12-venv && \
     ln -s /usr/bin/python3 /usr/bin/python
@@ -22,7 +21,7 @@ RUN apt-get install -y locales && \
     locale-gen en_US.UTF-8
 ENV LANG en_US.UTF-8
 ENV LANGUAGE en_US:en
-ENV LC_ALL en_US.UTF-8  #
+ENV LC_ALL en_US.UTF-8
 
 # Set environment variables
 ENV BNGPATH=$DIRPATH/BioNetGen-2.4.0
@@ -55,9 +54,7 @@ RUN git clone https://github.com/gyorilab/indra.git && \
     cd $DIRPATH && \
     wget "https://github.com/RuleWorld/bionetgen/releases/download/BioNetGen-2.4.0/BioNetGen-2.4.0-Linux.tgz" \
         -O bionetgen.tar.gz -nv && \
-    tar xzf bionetgen.tar.gz && \
-    # Install things related to API deployment
-    pip install gunicorn
+    tar xzf bionetgen.tar.gz
 
 # Install indra_reading
 RUN git clone https://github.com/indralab/indra_reading.git && \
