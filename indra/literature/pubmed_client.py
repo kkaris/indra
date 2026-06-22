@@ -9,6 +9,7 @@ import re
 from datetime import datetime
 
 import time
+from concurrent.futures import ThreadPoolExecutor
 from io import StringIO
 
 import tqdm
@@ -1429,6 +1430,7 @@ def ensure_xml_files(
     raise_http_error: bool = True,
     raise_checksum_error: bool = False,
     force: bool = False,
+    max_workers: int = 1,
 ) -> None:
     """Ensure that the XML files are downloaded and up to date.
 
@@ -1450,7 +1452,10 @@ def ensure_xml_files(
         the file. Default: False.
     force :
         If True, force re-download of all XML files, even if they already exist.
+    max_workers :
+        Number of parallel download threads. Default: 1 (serial). Maximum: 4.
     """
+    max_workers = max(1, min(4, max_workers))
     xml_path = Path(xml_path)
     xml_path.mkdir(parents=True, exist_ok=True)
 
@@ -1458,12 +1463,8 @@ def ensure_xml_files(
     updatefiles = [u for u in _get_urls(pubmed_archive_update)]
 
     total_files = len(basefiles) + len(updatefiles)
-    skips = 0
-    for xml_url in tqdm.tqdm(
-        basefiles + updatefiles,
-        desc="Downloading PubMed XML files",
-        unit="file",
-    ):
+
+    def _ensure_one(xml_url: str) -> bool:
         xml_file_path = xml_path.joinpath(xml_url.split("/")[-1])
         if force or not xml_file_path.exists():
             success = _download_xml_gz(
@@ -1475,7 +1476,18 @@ def ensure_xml_files(
             )
             if not success:
                 tqdm.tqdm.write(f"Error downloading {xml_url}, skipping")
-                skips += 1
+                return False
+        return True
+
+    urls = basefiles + updatefiles
+    with ThreadPoolExecutor(max_workers=max_workers) as executor:
+        results = list(tqdm.tqdm(
+            executor.map(_ensure_one, urls),
+            total=total_files,
+            desc="Downloading PubMed XML files",
+            unit="file",
+        ))
+    skips = sum(1 for success in results if not success)
 
     if skips:
         logger.warning(f"Skipped {skips} out of {total_files}")
@@ -1485,7 +1497,7 @@ def ensure_xml_files(
         ]
         missing_str = "\n".join(missing_files)
 
-        logger.warning(f"Missing {len(missing_files)} files: {missing_str}")
+        logger.warning(f"Missing {len(missing_files)} files:\n{missing_str}")
 
 
 def _get_urls(index_url: str):
