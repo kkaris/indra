@@ -1423,7 +1423,13 @@ def generate_retractions_file(xml_path: str, download_missing: bool = False):
         fh.write('\n'.join(sorted(retractions)))
 
 
-def ensure_xml_files(xml_path: str, retries: int = 3):
+def ensure_xml_files(
+    xml_path: str,
+    retries: int = 3,
+    raise_http_error: bool = True,
+    raise_checksum_error: bool = False,
+    force: bool = False,
+) -> None:
     """Ensure that the XML files are downloaded and up to date.
 
     Parameters
@@ -1434,6 +1440,16 @@ def ensure_xml_files(xml_path: str, retries: int = 3):
     retries :
         Number of times to retry downloading an individual XML file if there
         is an HTTP error. Default: 3.
+    raise_http_error :
+        If True, raise an HTTPError if an XML file cannot be downloaded after
+        the specified number of retries. If False, log a warning and skip the
+        file.
+    raise_checksum_error :
+        If True, raise a ValueError if the checksum of a downloaded XML file
+        does not match the expected checksum. If False, log a warning and skip
+        the file. Default: False.
+    force :
+        If True, force re-download of all XML files, even if they already exist.
     """
     xml_path = Path(xml_path)
     xml_path.mkdir(parents=True, exist_ok=True)
@@ -1441,25 +1457,45 @@ def ensure_xml_files(xml_path: str, retries: int = 3):
     basefiles = [u for u in _get_urls(pubmed_archive_baseline)]
     updatefiles = [u for u in _get_urls(pubmed_archive_update)]
 
-    # Count successfully downloaded files
+    total_files = len(basefiles) + len(updatefiles)
+    skips = 0
     for xml_url in tqdm.tqdm(
-            basefiles + updatefiles, desc="Downloading PubMed XML files"
+        basefiles + updatefiles,
+        desc="Downloading PubMed XML files",
+        unit="file",
     ):
         xml_file_path = xml_path.joinpath(xml_url.split("/")[-1])
-        if not xml_file_path.exists():
-            success = _download_xml_gz(xml_url, xml_file_path, retries=retries)
+        if force or not xml_file_path.exists():
+            success = _download_xml_gz(
+                xml_url,
+                xml_file_path,
+                raise_http_error=raise_http_error,
+                md5_check=raise_checksum_error,
+                retries=retries,
+            )
             if not success:
                 tqdm.tqdm.write(f"Error downloading {xml_url}, skipping")
+                skips += 1
+
+    if skips:
+        logger.warning(f"Skipped {skips} out of {total_files}")
+        missing_files = [
+            xml_url for xml_url in basefiles + updatefiles
+            if not xml_path.joinpath(xml_url.split("/")[-1]).exists()
+        ]
+        missing_str = "\n".join(missing_files)
+
+        logger.warning(f"Missing {len(missing_files)} files: {missing_str}")
 
 
-def _get_urls(url: str):
+def _get_urls(index_url: str):
     """Get the paths to all XML files on the PubMed FTP server."""
     from bs4 import BeautifulSoup
 
-    logger.info("Getting URL paths from %s" % url)
+    logger.info("Getting URL paths from %s" % index_url)
 
-    # Get page
-    response = requests.get(url)
+    # Get root page with the XML files
+    response = requests.get(index_url)
     response.raise_for_status()
 
     # Make soup
@@ -1468,7 +1504,7 @@ def _get_urls(url: str):
     soup = BeautifulSoup(response.text, "html.parser")
 
     # Append trailing slash if not present
-    url = url if url.endswith("/") else url + "/"
+    index_url = index_url if index_url.endswith("/") else index_url + "/"
 
     # Loop over all links
     for link in soup.find_all("a"):
@@ -1477,11 +1513,16 @@ def _get_urls(url: str):
         # 'pubmed<2 digit year>n<4 digit file index>.xml.gz'
         # but skip the md5 files
         if href and href.startswith("pubmed") and href.endswith(".xml.gz"):
-            yield url + href
+            yield index_url + href
 
 
-def _download_xml_gz(xml_url: str, xml_file: Path, md5_check: bool = True,
-                     retries: int = 3) -> bool:
+def _download_xml_gz(
+    xml_url: str,
+    xml_file: Path,
+    raise_http_error: bool = False,
+    md5_check: bool = True,
+    retries: int = 3,
+) -> bool:
     try:
         resp = requests.get(xml_url)
         resp.raise_for_status()
@@ -1489,8 +1530,13 @@ def _download_xml_gz(xml_url: str, xml_file: Path, md5_check: bool = True,
         if retries > 0:
             tqdm.tqdm.write(f"Error downloading {xml_url}, retrying." + str(e))
             sleep(1)
-            return _download_xml_gz(xml_url, xml_file, md5_check, retries - 1)
+            return _download_xml_gz(
+                xml_url, xml_file, raise_http_error, md5_check, retries - 1
+            )
         else:
+            if raise_http_error:
+                logger.error(f"Error downloading {xml_url}: {e}")
+                raise e
             tqdm.tqdm.write(f"Error downloading {xml_url}, skipping")
             return False
 
