@@ -1385,7 +1385,9 @@ def is_retracted(pubmed_id: str) -> bool:
     return retractions.is_retracted(pubmed_id)
 
 
-def generate_retractions_file(xml_path: str, download_missing: bool = False):
+def generate_retractions_file(
+    xml_path: str, download_missing: bool = False, max_workers: int = 1
+):
     """Generate a CSV file of retracted papers from the PubMed XML.
 
     Parameters
@@ -1397,9 +1399,11 @@ def generate_retractions_file(xml_path: str, download_missing: bool = False):
         If True, download any missing XML files from the PubMed FTP server.
         Default: False. Note: A full download of the PubMed XML files takes up
         to 5 hours.
+    max_workers :
+        Number of parallel download threads. Default: 1 (serial). Maximum: 4.
     """
     if download_missing:
-        ensure_xml_files(xml_path)
+        ensure_xml_files(xml_path, max_workers=max_workers)
     retractions = set()
 
     files = glob.glob(os.path.join(xml_path, 'pubmed*.xml.gz'))
