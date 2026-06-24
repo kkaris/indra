@@ -1,10 +1,10 @@
 import re
 import logging
 import os
+import time
 import requests
 from functools import lru_cache
 from lxml import etree
-from lxml.etree import QName
 import xml.etree.ElementTree as ET
 
 from indra.literature import pubmed_client
@@ -13,7 +13,7 @@ from indra.util import UnicodeXMLTreeBuilder as UTB
 
 logger = logging.getLogger(__name__)
 
-pmc_url = 'https://www.ncbi.nlm.nih.gov/pmc/oai/oai.cgi'
+pmc_url = 'https://pmc.ncbi.nlm.nih.gov/api/oai/v1/mh/'
 pmid_convert_url = 'https://www.ncbi.nlm.nih.gov/pmc/utils/idconv/v1.0/'
 pmc_s3_base_url = 'https://pmc-oa-opendata.s3.amazonaws.com'
 s3_nsmap = {'s3': 'http://s3.amazonaws.com/doc/2006-03-01/'}
@@ -345,6 +345,17 @@ def get_ids(search_term, retmax=1000):
     return pubmed_client.get_ids(search_term, retmax=retmax, db='pmc')
 
 
+def _run_pmc_xml_request(pmc_params: dict, max_retries: int = 3):
+    # Run a request to the PMC OAI service and return the XML tree and handle 429
+    # errors. Per documentation, https://pmc.ncbi.nlm.nih.gov/tools/oai/, the endpoint
+    # only handles 3 requests per second.
+    res = requests.get(pmc_url, params=pmc_params)
+    if res.status_code == 429 and max_retries > 0:
+        time.sleep(0.5)
+        return _run_pmc_xml_request(pmc_params, max_retries=max_retries - 1)
+    return res
+
+
 def get_xml(pmc_id):
     """Returns XML for the article corresponding to a PMC ID."""
     if pmc_id.upper().startswith('PMC'):
@@ -355,7 +366,7 @@ def get_xml(pmc_id):
     params['identifier'] = 'oai:pubmedcentral.nih.gov:%s' % pmc_id
     params['metadataPrefix'] = 'pmc'
     # Submit the request
-    res = requests.get(pmc_url, params)
+    res = _run_pmc_xml_request(params)
     if not res.status_code == 200:
         logger.warning("Couldn't download %s" % pmc_id)
         return None
