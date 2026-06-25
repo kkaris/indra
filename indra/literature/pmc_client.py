@@ -367,7 +367,7 @@ def _run_pmc_xml_request(pmc_params: dict, max_retries: int = 4):
     return res
 
 
-def get_xml(pmc_id: str, raise_for_status: bool = False):
+def get_xml(pmc_id: str, raise_for_status: bool = False, max_retries: int = 4):
     """Returns XML for the article corresponding to a PMC ID
 
     Parameters
@@ -377,6 +377,9 @@ def get_xml(pmc_id: str, raise_for_status: bool = False):
     raise_for_status :
         If True, raise an HTTPError if the request fails. If False, return
         None on failure.
+    max_retries :
+        Maximum number of retries to make if the request fails with a 429
+        error.
 
     Returns
     -------
@@ -410,7 +413,7 @@ def get_xml(pmc_id: str, raise_for_status: bool = False):
     params['identifier'] = 'oai:pubmedcentral.nih.gov:%s' % pmc_id
     params['metadataPrefix'] = 'pmc'
     # Submit the request
-    res = _run_pmc_xml_request(params)
+    res = _run_pmc_xml_request(params, max_retries=max_retries)
     if raise_for_status:
         res.raise_for_status()
     if not res.status_code == 200:
