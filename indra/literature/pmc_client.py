@@ -367,8 +367,40 @@ def _run_pmc_xml_request(pmc_params: dict, max_retries: int = 4):
     return res
 
 
-def get_xml(pmc_id):
-    """Returns XML for the article corresponding to a PMC ID."""
+def get_xml(pmc_id: str, raise_for_status: bool = False):
+    """Returns XML for the article corresponding to a PMC ID
+
+    Parameters
+    ----------
+    pmc_id :
+        A PubMed Central ID in 'PMC<digits>' form.
+    raise_for_status :
+        If True, raise an HTTPError if the request fails. If False, return
+        None on failure.
+
+    Returns
+    -------
+    : str | None
+        The XML content as a unicode string, or None if the request fails
+        and raise_on_status is False.
+
+    Notes
+    -----
+    The endpoint this function relies on is aggressively rate limited. To do
+    bulk requesting, consider using the PMC Cloud S3 endpoints instead,
+    which are not rate limited and with a more robust API.
+    See https://pmc.ncbi.nlm.nih.gov/tools/oai/ for more information.
+
+    See Also
+    --------
+    The following functions are available from the PMC client module to interact
+    with the PMC Cloud S3 endpoint:
+    - :func:`download_article_files_s3`
+    - :func:`get_metadata_s3`
+    - :func:`get_pdf_s3`
+    - :func:`get_text_s3`
+    - :func:`get_xml_s3`
+    """
     if pmc_id.upper().startswith('PMC'):
         pmc_id = pmc_id[3:]
     # Request params
@@ -378,8 +410,10 @@ def get_xml(pmc_id):
     params['metadataPrefix'] = 'pmc'
     # Submit the request
     res = _run_pmc_xml_request(params)
+    if raise_for_status:
+        res.raise_for_status()
     if not res.status_code == 200:
-        logger.warning("Couldn't download %s" % pmc_id)
+        logger.warning(f"Couldn't download {pmc_id}. Got status {res.status_code}")
         return None
     # Read the bytestream
     xml_bytes = res.content
