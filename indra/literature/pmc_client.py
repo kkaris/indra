@@ -386,15 +386,16 @@ def get_xml(pmc_id: str, raise_for_status: bool = False):
 
     Notes
     -----
-    The endpoint this function relies on is aggressively rate limited. To do
-    bulk requesting, consider using the PMC Cloud S3 endpoints instead,
-    which are not rate limited and with a more robust API.
+    The endpoint this function relies on is aggressively rate limited and should
+    only be used for single requests. To do bulk requesting, consider using the
+    PMC Cloud S3 endpoints instead, which are not rate limited and with a more
+    robust API.
     See https://pmc.ncbi.nlm.nih.gov/tools/oai/ for more information.
 
     See Also
     --------
     The following functions are available from the PMC client module to interact
-    with the PMC Cloud S3 endpoint:
+    with the PMC Cloud Service hosted on AWS S3:
     - :func:`download_article_files_s3`
     - :func:`get_metadata_s3`
     - :func:`get_pdf_s3`
