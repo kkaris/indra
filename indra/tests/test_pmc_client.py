@@ -108,7 +108,7 @@ def test_get_xml_invalid():
 
 @pytest.mark.webservice
 def test_get_xml_invalid_s3():
-    pmc_id = '123456789000'
+    pmc_id = 'PMC123456789000'
     xml_str = pmc_client.get_xml_s3(pmc_id)
     assert xml_str is None
 
