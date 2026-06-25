@@ -75,7 +75,7 @@ def test_invalid_idtype():
         ids = pmc_client.id_lookup('DOI10.18632/oncotarget.2555', idtype='foo')
 
 
-@pytest.mark.webservice
+@pytest.mark.skip('PMC OA REST API is unstable')
 def test_get_xml():
     pmc_id = '4322985'
     xml_str = pmc_client.get_xml(pmc_id)
@@ -83,7 +83,7 @@ def test_get_xml():
     assert unicode_strs((pmc_id, xml_str))
 
 
-@pytest.mark.webservice
+@pytest.mark.skip('PMC OA REST API is unstable')
 def test_get_xml_PMC():
     pmc_id = 'PMC4322985'
     xml_str = pmc_client.get_xml(pmc_id)
@@ -99,7 +99,7 @@ def test_get_xml_PMC_s3():
     assert unicode_strs((pmc_id, xml_str))
 
 
-@pytest.mark.webservice
+@pytest.mark.skip('PMC OA REST API is unstable')
 def test_get_xml_invalid():
     pmc_id = '123456789000'
     xml_str = pmc_client.get_xml(pmc_id)
