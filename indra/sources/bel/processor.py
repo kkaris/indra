@@ -241,7 +241,7 @@ class PybelProcessor(object):
             return
         for mod in mods:
             mod_type = mod.mod_type
-            if edge_data[pc.RELATION] not in pc.CAUSAL_INCREASE_RELATIONS:
+            if edge_data[pc.RELATION] in pc.CAUSAL_DECREASE_RELATIONS:
                 mod_type = modtype_to_inverse.get(mod_type)
             modclass = modtype_to_modclass[mod_type]
             ev = self._get_evidence(u_data, v_data, k, edge_data)
