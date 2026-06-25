@@ -68,7 +68,7 @@ def get_text_content_for_pmids(pmids):
     failed = set()
     for pmc_id in pmc_ids:
         if pmc_id is not None:
-            pmc_xmls.append(pmc_client.get_xml(pmc_id))
+            pmc_xmls.append(pmc_client.get_xml_s3(pmc_id))
         else:
             failed.add(pmid)
         time.sleep(0.5)
