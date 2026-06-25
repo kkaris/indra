@@ -107,6 +107,13 @@ def test_get_xml_invalid():
 
 
 @pytest.mark.webservice
+def test_get_xml_invalid_s3():
+    pmc_id = '123456789000'
+    xml_str = pmc_client.get_xml_s3(pmc_id)
+    assert xml_str is None
+
+
+@pytest.mark.skip('PMC OA REST API is unstable')
 def test_extract_text():
     pmc_id = '4322985'
     xml_str = pmc_client.get_xml(pmc_id)
