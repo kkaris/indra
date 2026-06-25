@@ -345,14 +345,25 @@ def get_ids(search_term, retmax=1000):
     return pubmed_client.get_ids(search_term, retmax=retmax, db='pmc')
 
 
-def _run_pmc_xml_request(pmc_params: dict, max_retries: int = 3):
-    # Run a request to the PMC OAI service and return the XML tree and handle 429
-    # errors. Per documentation, https://pmc.ncbi.nlm.nih.gov/tools/oai/, the endpoint
-    # only handles 3 requests per second.
+def _run_pmc_xml_request(pmc_params: dict, max_retries: int = 4):
+    # Run a request to the PMC OAI service, return the XML tree if successful,
+    # and handle 429 errors. Per the documentation at
+    # https://pmc.ncbi.nlm.nih.gov/tools/oai/, the endpoint only handles 3
+    # requests per second. If a 429 error is sent back, the server typically
+    # penalizes the client for a longer period of time than that limit, hence
+    # the exponential backoff.
+    max_sleep = 60.0
+    attempt = 0
     res = requests.get(pmc_url, params=pmc_params)
-    if res.status_code == 429 and max_retries > 0:
-        time.sleep(0.5)
-        return _run_pmc_xml_request(pmc_params, max_retries=max_retries - 1)
+    while res.status_code == 429 and attempt < max_retries:
+        sleep_time = min(3**attempt, max_sleep)
+        logger.warning(
+            f"Got 429 from PMC OAI service, retrying in {sleep_time} seconds"
+        )
+        time.sleep(sleep_time)
+        attempt += 1
+        res = requests.get(pmc_url, params=pmc_params)
+
     return res
 
 
@@ -753,7 +764,7 @@ def _xpath_union(*xpath_list):
 
 
 def get_title(pmcid):
-    xml_string = get_xml(pmcid)
+    xml_string = get_xml_s3(pmcid)
     if not xml_string:
         return
     tree = etree.fromstring(xml_string.encode('utf-8'))
