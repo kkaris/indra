@@ -1438,6 +1438,24 @@ def ensure_xml_files(
 ) -> None:
     """Ensure that the XML files are downloaded and up to date.
 
+    This function downloads the full archive published by PubMed at
+    https://ftp.ncbi.nlm.nih.gov/pubmed/baseline and
+    https://ftp.ncbi.nlm.nih.gov/pubmed/updatefiles which contains citation
+    records holding metadata and abstracts in XML format. The baseline archive
+    is updated yearly, while the baseline archive is updated daily and includes
+    new, revised, and deleted citations. After downloading this archive, it can
+    be used to extract e.g. mesh annotation of articles, publication year,
+    retractions, author information. The files in the archive constsist of a
+    set of gzipped XML files, with each XML file containing multiple records for
+    a set of publications. See
+    https://dtd.nlm.nih.gov/ncbi/pubmed/doc/out/250101/index.html for more
+    information about this archive.
+
+    Use this function to create a complete data set from all available citation
+    records. If only a subset of records is needed, use e.g.
+    `get_metadata_for_all_ids` in this module to get metadata from a list of
+    pmids.
+
     Parameters
     ----------
     xml_path :
