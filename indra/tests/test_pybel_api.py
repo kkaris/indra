@@ -816,3 +816,42 @@ def test_process_bel_stmts():
     assert isinstance(bp.statements[0], Activation), bp.statements
     assert bp.statements[0].subj.name == 'lipoprotein', bp.statements
     assert bp.statements[0].obj.name == 'inflammatory response', bp.statements
+
+
+def test_dephosphorylation():
+    mek = Protein(name='DUSP4', namespace='HGNC')
+    erk = Protein(name='MAPK1', namespace='HGNC',
+                  variants=[pmod('Ph', position=185, code='Thr')])
+    g = BELGraph()
+    g.annotation_list['TextLocation'] = {'Abstract'}
+    ev_text = 'Some evidence.'
+    ev_pmid = '123456'
+    edge_hash = g.add_directly_decreases(
+        mek, erk, evidence=ev_text,
+        citation=ev_pmid,
+        annotations={"TextLocation": 'Abstract'},
+    )
+    pbp = bel.process_pybel_graph(g)
+    assert pbp.statements
+    assert len(pbp.statements) == 1
+    assert isinstance(pbp.statements[0], Dephosphorylation), pbp.statements
+    assert pbp.statements[0].residue == 'T'
+    assert pbp.statements[0].position == '185'
+    enz = pbp.statements[0].enz
+    sub = pbp.statements[0].sub
+    assert enz.name == 'DUSP4'
+    assert enz.mods == []
+    assert sub.name == 'MAPK1'
+    assert sub.mods == []
+    # Check evidence
+    assert len(pbp.statements[0].evidence) == 1
+    ev = pbp.statements[0].evidence[0]
+    assert ev.source_api == 'bel'
+    assert ev.source_id == edge_hash
+    assert ev.pmid == ev_pmid, (ev.pmid, ev_pmid)
+    assert ev.text == ev_text
+    assert ev.annotations == {
+        'bel': 'p(HGNC:DUSP4) directlyDecreases '
+               'p(HGNC:MAPK1, pmod(go:0006468 ! "protein phosphorylation", Thr, 185))'
+    }
+    assert ev.epistemics == {'direct': True, 'section_type': 'abstract'}
