@@ -1,10 +1,10 @@
 import re
 import logging
 import os
+import time
 import requests
 from functools import lru_cache
 from lxml import etree
-from lxml.etree import QName
 import xml.etree.ElementTree as ET
 
 from indra.literature import pubmed_client
@@ -13,7 +13,7 @@ from indra.util import UnicodeXMLTreeBuilder as UTB
 
 logger = logging.getLogger(__name__)
 
-pmc_url = 'https://www.ncbi.nlm.nih.gov/pmc/oai/oai.cgi'
+pmc_url = 'https://pmc.ncbi.nlm.nih.gov/api/oai/v1/mh/'
 pmid_convert_url = 'https://www.ncbi.nlm.nih.gov/pmc/utils/idconv/v1.0/'
 pmc_s3_base_url = 'https://pmc-oa-opendata.s3.amazonaws.com'
 s3_nsmap = {'s3': 'http://s3.amazonaws.com/doc/2006-03-01/'}
@@ -345,8 +345,66 @@ def get_ids(search_term, retmax=1000):
     return pubmed_client.get_ids(search_term, retmax=retmax, db='pmc')
 
 
-def get_xml(pmc_id):
-    """Returns XML for the article corresponding to a PMC ID."""
+def _run_pmc_xml_request(pmc_params: dict, max_retries: int = 4):
+    # Run a request to the PMC OAI service, return the XML tree if successful,
+    # and handle 429 errors. Per the documentation at
+    # https://pmc.ncbi.nlm.nih.gov/tools/oai/, the endpoint only handles 3
+    # requests per second. If a 429 error is sent back, the server typically
+    # penalizes the client for a longer period of time than that limit, hence
+    # the exponential backoff.
+    max_sleep = 60.0
+    attempt = 0
+    res = requests.get(pmc_url, params=pmc_params)
+    while res.status_code == 429 and attempt < max_retries:
+        sleep_time = min(3**attempt, max_sleep)
+        logger.warning(
+            f"Got 429 from PMC OAI service, retrying in {sleep_time} seconds"
+        )
+        time.sleep(sleep_time)
+        attempt += 1
+        res = requests.get(pmc_url, params=pmc_params)
+
+    return res
+
+
+def get_xml(pmc_id: str, raise_for_status: bool = False, max_retries: int = 4):
+    """Returns XML for the article corresponding to a PMC ID
+
+    Parameters
+    ----------
+    pmc_id :
+        A PubMed Central ID in 'PMC<digits>' form.
+    raise_for_status :
+        If True, raise an HTTPError if the request fails. If False, return
+        None on failure.
+    max_retries :
+        Maximum number of retries to make if the request fails with a 429
+        error.
+
+    Returns
+    -------
+    : str | None
+        The XML content as a unicode string, or None if the request fails
+        and raise_on_status is False.
+
+    Notes
+    -----
+    The endpoint this function relies on is aggressively rate limited and should
+    only be used for single requests. To do bulk requesting, consider using the
+    PMC Cloud S3 endpoints instead, which are not rate limited and with a more
+    robust API.
+    See https://pmc.ncbi.nlm.nih.gov/tools/oai/ for more information.
+
+    See Also
+    --------
+    The following functions are available from the PMC client module to interact
+    with the PMC Cloud Service hosted on AWS S3:
+    - :func:`download_article_files_s3`
+    - :func:`get_metadata_s3`
+    - :func:`get_pdf_s3`
+    - :func:`get_text_s3`
+    - :func:`get_xml_s3`
+    """
     if pmc_id.upper().startswith('PMC'):
         pmc_id = pmc_id[3:]
     # Request params
@@ -355,9 +413,11 @@ def get_xml(pmc_id):
     params['identifier'] = 'oai:pubmedcentral.nih.gov:%s' % pmc_id
     params['metadataPrefix'] = 'pmc'
     # Submit the request
-    res = requests.get(pmc_url, params)
+    res = _run_pmc_xml_request(params, max_retries=max_retries)
+    if raise_for_status:
+        res.raise_for_status()
     if not res.status_code == 200:
-        logger.warning("Couldn't download %s" % pmc_id)
+        logger.warning(f"Couldn't download {pmc_id}. Got status {res.status_code}")
         return None
     # Read the bytestream
     xml_bytes = res.content
@@ -742,7 +802,7 @@ def _xpath_union(*xpath_list):
 
 
 def get_title(pmcid):
-    xml_string = get_xml(pmcid)
+    xml_string = get_xml_s3(pmcid)
     if not xml_string:
         return
     tree = etree.fromstring(xml_string.encode('utf-8'))

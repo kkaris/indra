@@ -73,7 +73,7 @@ def process_pmc(pmc_id, offline=False, url=None,
     """
     # Loading content from PMC first
     logger.info('Loading %s from PMC' % pmc_id)
-    xml_str = pmc_client.get_xml(pmc_id)
+    xml_str = pmc_client.get_xml_s3(pmc_id)
     if xml_str is None:
         return None
     # Write into a file in the working folder

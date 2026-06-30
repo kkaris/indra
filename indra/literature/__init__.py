@@ -5,7 +5,6 @@ from indra.literature import pubmed_client
 from indra.literature import pmc_client
 from indra.literature import crossref_client
 from indra.literature import elsevier_client
-from functools import lru_cache
 from indra.util import UnicodeXMLTreeBuilder as UTB
 
 logger = logging.getLogger(__name__)
@@ -100,7 +99,7 @@ def get_full_text(paper_id, idtype, preferred_content_type='text/xml'):
     doi = ids.get('doi')
     # First try to find paper via PMC
     if pmcid:
-        nxml = pmc_client.get_xml(pmcid)
+        nxml = pmc_client.get_xml_s3(pmcid)
         if nxml:
             return nxml, 'pmc_oa_xml'
     # If we got here, it means we didn't find the full text in PMC, so we'll
